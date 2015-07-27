@@ -1,0 +1,8 @@
+{
+  "development": {
+    "URL": "mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8"
+  },
+  "production": {
+    "URL": "mysql://kataras:pass@ideopod.com/taglub?debug=false&charset=utf8"
+  }
+}

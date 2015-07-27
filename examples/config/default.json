@@ -1,0 +1,11 @@
+{
+  "Server": {
+    "port": 1993,
+    "domain" : "node-myslq-wrapper.com"
+  },
+  "Session": {
+    "secret": "node-myslq-wrapper secret",
+    "resave": true,
+    "saveUninitialized": true
+  }
+}

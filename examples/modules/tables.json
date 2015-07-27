@@ -1,0 +1,6 @@
+{
+  
+    "users":  [ "user_id", "username", "password", "mail", "created_date" ],
+    "tests" : [ "test_id", "testcolumn1", "test_column2" ]
+  
+}

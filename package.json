@@ -1,0 +1,30 @@
+{
+    "name": "node-mysql-wrapper",
+    "version": "1.0.0",
+    "description": "This module manages tables and models for mysql(node-mysql). ",
+    "main": "index.js",
+    "dependencies": {
+        "mysql": "^2.8.0",
+		"deferred": "^0.7.2"
+    },
+    "devDependencies": {"debug": "~2.2.0"},
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/kataras/node-mysql-wrapper.git"
+    },
+    "keywords": [
+        "node-mysql-wrapper",
+        "node.mysql.wrapper",
+        "mysql",
+        "wrapper"
+    ],
+    "author": "Makis Maropoulos <makis@ideopod.com> (https://github.com/kataras)",
+    "license": "GPL-3.0",
+    "bugs": {
+        "url": "https://github.com/kataras/node-mysql-wrapper/issues"
+    },
+    "homepage": "https://github.com/kataras/node-mysql-wrapper#readme"
+}
