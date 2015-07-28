@@ -1,6 +1,37 @@
 {
-  
-    "users":  [ "user_id", "username", "password", "mail", "created_date" ],
-    "tests" : [ "test_id", "testcolumn1", "test_column2" ]
-  
+  //27:07:2015 9a ta kanw me mysql auta, na min xreiazete to json file
+  /*
+  1: SELECT DISTINCT TABLE_NAME ,column_name
+    FROM INFORMATION_SCHEMA.key_column_usage
+    WHERE TABLE_SCHEMA IN ('*your_db_name*');
+  2:
+  SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = 'my_database' AND TABLE_NAME = 'my_table';
+
+  //1.pernei to table name kai to primary key tou (arkei ta tables pou 9eloume na exoun primary key)
+  //2.pernoume ola ta column names apo ta tables
+  //3. auta ola leitourgoun se 'nees' version tis MYSQL grafoun , logika meta tou 2014 ola doulevoun.
+  den xrisimopoiw SHOW TABLES kai SHOW KEYS giati apoti diavasa  einai pio arges entoles. 
+  //3.5. oso gia to information_schema einai ena virtual dynamic table kai analogos
+  to pios xristis to kalei dixnei ta analoga apotelesmata
+  kai oles oi hosting etairies dn to allazoun auto (kai den proteinete kiolas)
+  ara dn pezei thema me ta dikaiwmata tou user( an upirxe/uparksei (9a) xrisimopoiousa to SHOW TABLES)
+  */
+  "users": {
+    "columns": [ "user_id", "username", "password", "mail", "created_date" ],
+    "primary": "user_id"
+  },
+
+  "tests": {
+    "columns": [ "test_id", "testcolumn1", "test_column2", "user_id" ],
+    "primary": "test_id",
+    "foreign": "user_id"
+  },
+
+  "comments": {
+    "columns": [ "comment_id", "content", "user_id", "test_id" ],
+    "primary": "comment_id",
+    "foreign": [ "user_id", "test_id" ]
+  }
+
+
 }

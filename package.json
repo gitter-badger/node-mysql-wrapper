@@ -1,6 +1,6 @@
 {
     "name": "node-mysql-wrapper",
-    "version": "1.0.0",
+    "version": "1.0.2",
     "description": "This module manages tables and models for mysql(node-mysql). ",
     "main": "index.js",
     "dependencies": {
