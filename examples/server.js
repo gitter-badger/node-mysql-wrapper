@@ -12,17 +12,24 @@ var mysqlCon =  require('./../index')(dbConfig.URL);
 mysqlCon.connect().then(function () {
     //load models
   
-    var user = {userId:15,mail:'update15@omakis.com',username: 'an updated username', password: 'a pass',noInDatabaseProperty:'something else that must NOT shown as column below!'};
+    var user = {userId:17,mail:'mail17@omakis.com',username: 'an updated17 username', password: 'a pass',noInDatabaseProperty:'something else that must NOT shown as column below!'};
     var userTable = mysqlCon.table('users');
     var userModel = userTable.model(user);
     
     console.log('Columns of this user: ' + userModel.table.columns + ' \nValues: ' + userModel.values + ' \ntable name: ' + userModel.table.name);
 
-    console.log("============= try to save==============");
+   /* console.log("============= try to save==============");
     userModel.save().then(function (_user) {
         console.log(user.userId + " from call back is the same object: " + _user.userId);
     });
-   
+      
+    console.log("================ try to delete ===============");
+    userModel.delete().then(function (_deleted) {
+        console.log("user with username: " + _deleted.username + " just deleted from db");
+        delete user;
+        delete userModel;
+    });
+ */
 
 });
 
