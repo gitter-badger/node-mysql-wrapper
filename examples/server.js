@@ -12,11 +12,11 @@ var mysqlCon =  require('./../index')(dbConfig.URL);
 mysqlCon.connect().then(function () {
     //load models
   
-    var user = {mail:'aneimail@omakis.com',username: 'a username', password: ' a pass',noInDatabaseProperty:'something else that must NOT shown as column below!'};
+    var user = {userId:15,mail:'update15@omakis.com',username: 'an updated username', password: 'a pass',noInDatabaseProperty:'something else that must NOT shown as column below!'};
     var userTable = mysqlCon.table('users');
     var userModel = userTable.model(user);
     
-    console.log('Columns of this user: ' + userModel.columns + ' \nValues: ' + userModel.values + ' \ntable name: ' + userModel.table.name);
+    console.log('Columns of this user: ' + userModel.table.columns + ' \nValues: ' + userModel.values + ' \ntable name: ' + userModel.table.name);
 
     console.log("============= try to save==============");
     userModel.save().then(function (_user) {
