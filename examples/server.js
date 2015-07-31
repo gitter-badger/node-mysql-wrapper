@@ -34,9 +34,20 @@ mysqlCon.connect().then(function () {
     
     console.log("================ try to select by id ===============");
     var findUser = userTable.model({ userId: 18}); //You can use other property rathen than primary key, also you can use more than one property.
-    findUser.find().then(function (userObj) {
+    findUser.find().then(function (results) {
+        var userObj = results[0];
         console.log('find this user with username: ' + userObj.username);
-    }); */
+    }); 
+
+    console.log("================ try to select multi rows by username ===============");
+    var findUsers = userTable.model({ username: "a username" });
+    findUsers.find().then(function (users) {
+        [].forEach.call(users, function (_user) {
+            console.log('found: ' + _user.username + " with id: " + _user.userId);
+        });
+       
+    });
+    */
   
 });
 
