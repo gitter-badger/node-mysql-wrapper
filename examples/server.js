@@ -38,17 +38,24 @@ mysqlCon.connect().then(function () {
         var userObj = results[0];
         console.log('find this user with username: ' + userObj.username);
     }); 
-
+    */
     console.log("================ try to select multi rows by username ===============");
-    var findUsers = userTable.model({ username: "a username" });
+    var findUsers = userTable.model({ username: "a dsadausername" });
     findUsers.find().then(function (users) {
+        if (!users) {
+            console.log('I cannot find anything....');
+            return;
+        }
+
+
         [].forEach.call(users, function (_user) {
             console.log('found: ' + _user.username + " with id: " + _user.userId);
         });
-       
+
+
     });
-    */
-  
+
+
 });
 
 
