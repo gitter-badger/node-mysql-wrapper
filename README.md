@@ -1,4 +1,4 @@
-# node-mysql-wrapper
+﻿# node-mysql-wrapper
 
 This is a node js module which manages mysql (node-mysql) connection and models with a way that you are expecting! 
 

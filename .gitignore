@@ -1,3 +1,6 @@
 node_modules
+obj
 .git
 .settings
+node-mysql-wrapper.njsproj
+.ntvs_analysis.dat
