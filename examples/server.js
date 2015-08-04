@@ -71,32 +71,40 @@ mysqlCon.connect().then(function () {
          }
      });*/
 
+
+
+   /* mysqlCon.table('comments').model({ userId:19 , commentLikes: { commentId: '=' } }).find().then(function (_results) {
+        console.log('comments and likes: ');
+        console.dir(_results);
+    });*/
     /*one to one relation ship if finds only one result. userInfos will be undefined and new property called  'userInfo' stores the row which it's user_id = 18.*/
     //next line  means the value of the primary key of the parent-relationship object.(userId=18) [ the commentId:'=' inside comment's likes doesnt work yet.
-   var findUserWithInfo = userTable.model({ userId: 18, userInfos: { userId: '=' }, comments: { userId: '=' , likes: { commentId: '=' } } });
+   var findUserWithInfo = userTable.model({ username: 'a username', userInfos: { userId: '=' }, comments: { userId: '=' } });
     
-    findUserWithInfo.find().then(function (results) {
+    findUserWithInfo.map().then(function (results) {
         if (!results) {
             console.log('didnt find this user');
             return;
         }
-        var _user = results[0];
-        //console.dir(_user);
-        console.log('I found the user ' + _user.username + ' with user info id ' + _user.userInfo.userInfoId + ' which hometown is: ' + _user.userInfo.hometown);
-        
-        if (_user.comments !== undefined && _user.comments.length > 0) {
-            if (_user.comments.likes) {
-                console.log('some likes too with size of ' + _user.comments.likes.length);
-            }
-            console.log('I found comments too, with contents!');
-            for (var i = 0; i < _user.comments.length; i++) {
-                console.log('Comment content: ' + _user.comments[i].content);
+        console.dir(results);
+        console.log('Found ' + results.length + ' users');
+        for (var i = 0; i < results.length; i++) {
+            var _user = results[i];
+            //console.dir(_user);
+            console.log('I found the user ' + _user.username + ' with user id ' + _user.userId + ' which hometown is: ' + _user.userInfos[0].hometown);
+            
+            if (_user.comments !== undefined && _user.comments.length > 0) {
+                for (var j = 0; j < _user.comments.length; j++) {
+                    //console.dir(_user.comments[i]);
+                    console.log('Comment content: ' + _user.comments[j].content);
+                }
             }
         }
+   
 
 
     });
-
+ 
     /*[greek(for me)] prepei na kanw kai ta likes, alla to provlima einai an exw
      *  userTable.model({ userId: 18, userInfos: { userId: 18 }, comments: { userId: 18 , likes: {commentId: poio? prepei na exw px ena ? gia na sindeete me to primary key tou jsObject,
      * i na to kanw me commentId: 'commentId' i commentId : '?' 9a dw pws 9a to kanw...}} });
@@ -106,7 +114,7 @@ mysqlCon.connect().then(function () {
 });
 
 
-var httpPort = config.get('Server.port') || 1193;
+var httpPort = 1193;//config.get('Server.port') || 1193;
 httpServer.listen(httpPort, function () {
     console.log("Server is running on " + httpPort);
 });
