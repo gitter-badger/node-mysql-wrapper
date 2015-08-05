@@ -11,7 +11,7 @@ $ npm install node-mysql-wrapper
 [NPM] https://www.npmjs.com/package/node-mysql-wrapper
 
 ## Usage
-
+### server.js
 ```js
 var express = require('express');
 var app = express();
@@ -58,7 +58,7 @@ var dbConfig = require('./config/database.json')[process.env.NODE_ENV || 'develo
 */
 //  END OF INIT CONNECTION EXPLAINATION
 
-var mysqlCon = require('./../index')("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8", true);
+var mysqlCon = require('node-mysql-wrapper')("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8", true);
 
 
 
@@ -141,6 +141,15 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
         }
     });
 
+    var userFactory = require('./modules/user.js');
+    userFactory.login("updated18@omakis.com", "a pass").then(function (userFound) {
+
+        console.log("===== USER LOGIN ======");
+        console.log('Valid user with ID: ' + userFound.userId + ' and username: ' + userFound.username);
+    }, 
+    function () {
+        console.error('Invalid mail or password!');
+    });
 
 });
 //END OF EXAMPLES AND TESTS.
@@ -150,6 +159,48 @@ httpServer.listen(httpPort, function () {
     console.log("Server is running on " + httpPort);
 });
 
+
+```
+### /modules/user.js
+```js
+var Promise = require('bluebird');
+//you are seeing well, no need of require the node-mysql-wrapper, because you pass a 'true' on the second parameter on server.js
+
+var User = function(){
+    
+};
+
+User.prototype.login = function (mail, password) {
+    var def = Promise.defer();
+
+    _W('users', { mail: mail, password: password }).find().then(function (results) {
+        if (results.length > 0) {
+            def.resolve(results[0]);
+        } else {
+            def.reject();
+        }
+    });
+
+    return def.promise;
+};
+ //OR
+User.prototype.login2 = function (mail, password) {
+    var def = Promise.defer();
+    var userTable = new MySQLTable('users');
+    userTable.model({ mail: mail, password: password }).find().then(function (results) {
+        if (results.length > 0) {
+            def.resolve(results[0]);
+        } else {
+            def.reject();
+        }
+    });
+    
+    return def.promise;
+};
+
+
+
+module.exports = new User();
 
 ```
 

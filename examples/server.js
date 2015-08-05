@@ -58,7 +58,7 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
      * All methods bellow do the same thing, returns the user which it's user_id equals to 18.
      * _W stands for 'Wrapper', indicates: both of MySQLTable & MySQLTable, returns the correct is a matter of how many arguments you pass on. Look how it works:
     */
-
+    /*
     //TABLE use:
     var userTable = MySQLTable('users');
     //OR
@@ -79,14 +79,14 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
     model.find().then(function (results) {
         console.log('Found with username: ' + results[0].username);
     });
-    
+    */
     /*END IF */
     
-    var userTable = mysqlCon.table('users');
+    
     
     /*one to one relation ship if finds only one result. userInfos will be undefined and new property called  'userInfo' stores the row which it's user_id = 18.*/
     //next line  means the value of the primary key of the parent-relationship object.(userId=18) [ the commentId:'=' inside comment's likes doesnt work yet.
-    var findUserWithInfo = userTable.model({ username: 'a username', userInfos: { userId: '=' }, comments: { userId: '=' } , whateversharedProperty: 'whatever-no db' });
+    var findUserWithInfo = _W('users', { username: 'a username', userInfos: { userId: '=' }, comments: { userId: '=' } , whateversharedProperty: 'whatever-no db' });
     
     findUserWithInfo.find().then(function (results) {
         if (!results) {
@@ -113,19 +113,28 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
     });
     
     
-    var oneUserToDelete = userTable.model({ userId: 16 }).safeDelete().then(function (jsRes) {
+    var oneUserToDelete = _W('users', { userId: 16 }).safeDelete().then(function (jsRes) {
         if (jsRes.affectedRows > 0) {
             console.log('deleted');
         }
   
     }); //When you want to delete a row using primary key (safe way), you could also use .delete() for this too, it will do the same thing .
     
-    var someUsersToDelete = userTable.model({ username: 'usernames to delete' }).delete().then(function (jsRes) { //When you want to delete row(s) without using primary key 
+    var someUsersToDelete = _W('users', { username: 'usernames to delete' }).delete().then(function (jsRes) { //When you want to delete row(s) without using primary key 
         if (jsRes.affectedRows > 0) {
             console.log(jsRes.affectedRows + ' users with username: ' + jsRes.username + ' have gone :(');
         }
     });
-
+    
+    
+    var userFactory = require('./modules/user.js');
+    userFactory.login("updated18@omakis.com", "a pass").then(function (userFound) {
+        console.log("===== USER LOGIN ======");
+        console.log('Valid user with ID: ' + userFound.userId + ' and username: ' + userFound.username);
+    }, 
+    function () {
+        console.error('Invalid mail or password!');
+    });
 
 });
 //END OF EXAMPLES AND TESTS.
