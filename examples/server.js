@@ -8,7 +8,9 @@ var dbConfig = require('./config/database.json')[process.env.NODE_ENV || 'develo
 // EXAMPLES AND TESTS BEGIN
 var mysqlCon = require('./../index')(dbConfig.URL, true); //"mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8", true means that this is the only one connection in the whole node js project, global variables MySQLTable and MySQLModel will be available to use without mysqlCon var.
 
-
+//IF you only want to use only certain tables from your database, and not all of them, do that before the connect:
+//mysqlCon.useOnly('users',['comments','comment_likes']); //argument(s) can be array of strings or just string(s).
+//END IF
 
 mysqlCon.connect().then(function () {
     
