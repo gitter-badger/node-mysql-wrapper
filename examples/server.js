@@ -5,50 +5,83 @@ var path = require('path');
 var config = require('config');
 var dbConfig = require('./config/database.json')[process.env.NODE_ENV || 'development'];
 
-// EXAMPLES AND TESTS BEGIN
-var mysqlCon = require('./../index')(dbConfig.URL, true); //"mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8", true means that this is the only one connection in the whole node js project, global variables MySQLTable and MySQLModel will be available to use without mysqlCon var.
+//EXAMPLES AND TESTS BEGIN
+//  START OF INIT CONNECTION EXPLAINATION
+/* You have 3 options to attach a connection to the wrapper
+ * 
+ * 1. If you dont have an already mysql connection object do:
+ *  1.1 Use object with host,user,password and database,
+ *  1.2 Use a connection string as described later.
+ * 
+ * 2. If you have an already  mysql connection object, connected or no connected do:
+ *  2.1 Just pass this object to the wrapper module.
+ * 
+ * For '1' and for '2' you have always to start/connect/link the module  with mysqlCon.connect() or .link(), they do the same thing.
+ * Second parameter:  true means that this is the only one connection in the whole node js project, global variables MySQLTable, MySQLModel and _W will be available to use without help of mysqlCon variable to use tables and create models.
+ * Examples to init the connection and wrapper:
+ */
+
+/*1.1 
+ * var mysqlCon = require('./../index')({
+    host     : '127.0.0.1',
+    user     : 'kataras',
+    password : 'pass',
+    database: 'taglub'
+},true);
+ *1.2
+ * var mysqlCon = require('./../index')("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8",true);
+ *2.1
+ *  var mysql = require('mysql');
+ *  var originalMySqlConnection = mysql.createConnection("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8");
+ *  var mysqlCon = require('./../index')(originalMySqlConnection, true); 
+ *   //OR
+ * originalMySqlConnection.connect().then(function () {
+ *  var mysqlCon = require('./../index')(originalMySqlConnection, true);
+ * });
+ * 
+ * after '1' and '2' do always: mysqlCon.link().then(function () { ... your code here });
+*/
+//  END OF INIT CONNECTION EXPLAINATION
+
+var mysqlCon = require('./../index')("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8", true);
+
+
 
 //IF you only want to use only certain tables from your database, and not all of them, do that before the connect:
 //mysqlCon.useOnly('users',['comments','comment_likes']); //argument(s) can be array of strings or just string(s).
 //END IF
 
-mysqlCon.connect().then(function () {
+mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
     
     /* IF and only IF you pass the second parameter as 'true' on mysqlCon, you can have directly and global access to MySQLModel and MySQLTable objects, 
      * instead of calling mysqlCon.table('tablename').model({object or criteria}).
      * All methods bellow do the same thing, returns the user which it's user_id equals to 18.
-     * _T stands for 'Table', indicates: new MySQLTable 
-     * _M stands for 'Model', indicates: new MySQLModel
-     * _W stands for 'Wrapper', indicates: both of them( _T and _M), returns the correct is a matter of how many arguments you pass on. Look how it works:
+     * _W stands for 'Wrapper', indicates: both of MySQLTable & MySQLTable, returns the correct is a matter of how many arguments you pass on. Look how it works:
     */
 
     //TABLE use:
-    var userTable =  MySQLTable('users');
-     //OR
-    var userTable =  _T('users');//yes without 'new' keyword, it will auto find the correct table.
-     //OR
-    var userTable =  _W('users'); // _W with one parameter/argument means: return MySQLTable with a name of arguments[0].
-     
-    userTable.model({ userId: 18 }).find().then(function (results) { 
+    var userTable = MySQLTable('users');
+    //OR
+    var userTable = _W('users'); // _W with one parameter/argument means: return MySQLTable with a name of arguments[0]. //yes without 'new' keyword, it will auto find the correct table.
+    
+    userTable.model({ userId: 18 }).find().then(function (results) {
         console.log('Found with username: ' + results[0].username);
     });
-     
+    
     //userTable.model({username : 'username which exists on 4 rows'})... // you can use this table for create more models or criteria filters for find.
     
     //AND MODEL ONLY use: 
     
-    var model = new MySQLModel('users',{ userId: 18 });
-     //OR
-    var model = _M('users', { userId: 18 });
-     //OR
-    var model = _W('users',{ userId:18 });// _W with two parameters/arguments means: create and return new MySQLModel from table of arguments[0] and object or criteria of arguments[1].
-     
+    var model = new MySQLModel('users', { userId: 18 });
+    //OR
+    var model = _W('users', { userId: 18 });// _W with two parameters/arguments means: create and return new MySQLModel from table of arguments[0] and object or criteria of arguments[1].
+    
     model.find().then(function (results) {
         console.log('Found with username: ' + results[0].username);
     });
-  
+    
     /*END IF */
- 
+    
     var userTable = mysqlCon.table('users');
     
     /*one to one relation ship if finds only one result. userInfos will be undefined and new property called  'userInfo' stores the row which it's user_id = 18.*/
@@ -93,8 +126,8 @@ mysqlCon.connect().then(function () {
         }
     });
 
-});
 
+});
 //END OF EXAMPLES AND TESTS.
 
 var httpPort = 1193;//config.get('Server.port') || 1193;
