@@ -43,7 +43,7 @@ var dbConfig = require('./config/database.json')[process.env.NODE_ENV || 'develo
 */
 //  END OF INIT CONNECTION EXPLAINATION
 
-var mysqlCon = require('./../index')("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8", true);
+var mysqlCon = require('./../index')("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8");
 
 
 
@@ -53,7 +53,10 @@ var mysqlCon = require('./../index')("mysql://kataras:pass@127.0.0.1/taglub?debu
 
 mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
     
-    /* IF and only IF you pass the second parameter as 'true' on mysqlCon, you can have directly and global access to MySQLModel and MySQLTable objects, 
+    /* First parameter is the mysql string,object or already defined mysql connection object ( conencted or no connected)
+     * Second parameter true or false if this is the only one connection in your project (defaults to true)
+     * Third parameter true or false , that you can have directly and global access to MySQLModel, MySQLTable and _W (MySQLWrapper) object. (defaults to true)
+     * 
      * instead of calling mysqlCon.table('tablename').model({object or criteria}).
      * All methods bellow do the same thing, returns the user which it's user_id equals to 18.
      * _W stands for 'Wrapper', indicates: both of MySQLTable & MySQLTable, returns the correct is a matter of how many arguments you pass on. Look how it works:
@@ -170,6 +173,24 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
         console.log("Admin mail exists? " + trueorfalse);
     });   
     */
+
+
+    // _W.When example:
+
+    var findAllByUsername = _W("users", { username: 'a username' }).find();
+    var findAllLikesFromUserId = _W("comment_likes", { userId: 18 }).find();
+    var findAllCommentsFromUserId = _W("comments", { userId: 18 }).find();
+    
+    _W.when(findAllByUsername, findAllLikesFromUserId,findAllCommentsFromUserId).then(function (_results) {
+        
+        console.log('find all users with USERNAME results: ');
+        console.dir(_results[0]);
+        console.log('\n find all LIKES by user id 18 results: ');
+        console.dir(_results[1]);
+        console.log('\n find all COMMENTS by user id 18 results: ');
+        console.dir(_results[2]);
+        console.log('\n');
+    });
 
 });
 //END OF EXAMPLES AND TESTS.

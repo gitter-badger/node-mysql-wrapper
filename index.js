@@ -1,25 +1,20 @@
 var _mysqlConMod = require('./lib/mysql-connection');
+var mysqlWrapper = require('./lib/mysql-wrapper.js');
+var mysqlTableClass = require('./lib/mysql-table.js');
+var mysqlModelClass = require('./lib/mysql-model.js');
+module.exports = function (mysqlUrlOrObjectOrMysqlAlreadyConnection, isThisTheOnlyOneConnection, useGlobals) {
+    //isThisTheOnlyOneConnection default = true
+    //useGlobals default = true  
+    module.exports.MySQLTable = mysqlTableClass;
+    module.exports.MySQLModel = mysqlModelClass;
+    module.exports.MySQLWrapper = mysqlWrapper;
 
-
-module.exports = function (mysqlUrlOrObjectOrMysqlAlreadyConnection, isThisTheOnlyOneConnection) {
-    if (isThisTheOnlyOneConnection) {
-        global.MySQLTable = require('./lib/mysql-table.js');
-        global.MySQLModel = require('./lib/mysql-model.js');
-        
-        global._W = function () {
-            var args = Array.prototype.slice.call(arguments);
-            if (args.length === 1)
-            {
-                 // means table
-                return _mysqlConMod.DefaultConnection.table(args[0])
-            } else {
-                //means model
-                return new MySQLModel(args[0], args[1]);
-            }
-        };
-    } else {
-        isThisTheOnlyOneConnection = false;
+    if (useGlobals || useGlobals === undefined) {
+        global.MySQLTable = mysqlTableClass;
+        global.MySQLModel = mysqlModelClass;
+        global._W = mysqlWrapper; 
     }
-    return new _mysqlConMod(mysqlUrlOrObjectOrMysqlAlreadyConnection, isThisTheOnlyOneConnection);
+ 
+    return new _mysqlConMod(mysqlUrlOrObjectOrMysqlAlreadyConnection, isThisTheOnlyOneConnection || true);
 };
 
