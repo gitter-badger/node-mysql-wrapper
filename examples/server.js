@@ -113,7 +113,7 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
     });
     
     
-    var oneUserToDelete = _W('users', { userId: 16 }).safeDelete().then(function (jsRes) {
+    /*   var oneUserToDelete = _W('users', { userId: 16 }).safeDelete().then(function (jsRes) {
         if (jsRes.affectedRows > 0) {
             console.log('deleted');
         }
@@ -135,6 +135,41 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
     function () {
         console.error('Invalid mail or password!');
     });
+
+    var userModel = _W("users", { username: "an updated x username 1nd time" , mail: "an updated mail for user id x 1st time" });
+    //create new user 
+    userModel.save().then(function (_newCreatedUser) {
+        //update this user
+        userModel.save("an updated username for user_id " + userModel.primaryKeyValue + "  or "+ _newCreatedUser.userId+" 2nd time", "an updated mail for user id " + userModel.primaryKeyValue + " 2nd time"); //1st parameter  follows the username, the first parameter of our model except the first which is the primary key userId 18, the second parameter follows the third of our model which is the 'mail' property's value.
+  
+    });
+    
+     */
+   
+ 
+     //EXTEND the Model:
+      MySQLModel.extend("mailExists", function (mail, callback) {//this is a shared custom function extends for all models.
+        
+        //this =  the caller's MySQLModel, for example this =  the new  MySQLModel("users",{}), where this.table.name = "users", look at the next function.
+        this.connection.query("SELECT COUNT(*) FROM " + this.table.name + " WHERE mail = " + this.connection.escape(mail), function (err, results) {
+            if (!err && results.length > 0 && results[0]["COUNT(*)"] > 0) {
+                callback(true);
+            } else {
+                callback(false);
+            }
+        });
+
+    });
+    
+    //or _W("users",{}).mailExists.... or _W("Whatevermodel",{})
+    new MySQLModel("users", {}).mailExists("mail20_updated@omakis.com", function (trueOrFalse) {
+        console.log("User mail exists? " + trueOrFalse);
+    });
+    /* 
+    _W("admins", {}).mailExists("mailadmin1@omakis.com", function (trueorfalse) {
+        console.log("Admin mail exists? " + trueorfalse);
+    });   
+    */
 
 });
 //END OF EXAMPLES AND TESTS.

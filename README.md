@@ -151,6 +151,32 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
         console.error('Invalid mail or password!');
     });
 
+
+      //EXTEND the Model:
+      MySQLModel.extend("mailExists", function (mail, callback) {//this is a shared custom function extends for all models.
+        
+        //this =  the caller's MySQLModel, for example this =  the new  MySQLModel("users",{}), where this.table.name = "users", look at the next function.
+        this.connection.query("SELECT COUNT(*) FROM " + this.table.name + " WHERE mail = " + this.connection.escape(mail), function (err, results) {
+            if (!err && results.length > 0 && results[0]["COUNT(*)"] > 0) {
+                callback(true);
+            } else {
+                callback(false);
+            }
+        });
+
+    });
+    
+    //or _W("users",{}).mailExists.... or _W("Whatevermodel",{})
+    new MySQLModel("users", {}).mailExists("mail20_updated@omakis.com", function (trueOrFalse) {
+        console.log("User mail exists? " + trueOrFalse);
+    });
+    /* 
+    _W("admins", {}).mailExists("mailadmin1@omakis.com", function (trueorfalse) {
+        console.log("Admin mail exists? " + trueorfalse);
+    });   
+    */
+
+
 });
 //END OF EXAMPLES AND TESTS.
 
