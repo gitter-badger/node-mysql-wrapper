@@ -192,6 +192,20 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
         console.log('\n');
     });
 
+
+    console.log('\n FIND FULL USER WITH COMMENTS AND THEIR LIKES');
+    var userFactory = require('./modules/user.js');
+    userFactory.getFullUser(18, function (user) {
+        console.log("FOUND the user with username: " + user.username);
+        console.log("AND COMMENTS: ");
+        
+        [].forEach.call(user.comments, function (comment) { 
+            console.log(comment.content + " with " + comment.likes.length + " likes");
+        });
+
+    
+    
+    });
 });
 //END OF EXAMPLES AND TESTS.
 
