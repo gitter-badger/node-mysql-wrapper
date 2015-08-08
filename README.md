@@ -58,7 +58,7 @@ var dbConfig = require('./config/database.json')[process.env.NODE_ENV || 'develo
 */
 //  END OF INIT CONNECTION EXPLAINATION
 
-var mysqlCon = require('./../index')("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8");
+var mysqlCon = require('node-mysql-wrapper')("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8"); // all parameters are default to true, means that this is the only one connection and also use the globals variables (_W,MySQLTable,MySQLModel)
 
 
 
@@ -66,7 +66,7 @@ var mysqlCon = require('./../index')("mysql://kataras:pass@127.0.0.1/taglub?debu
 //mysqlCon.useOnly('users',['comments','comment_likes']); //argument(s) can be array of strings or just string(s).
 //END IF
 
-mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
+mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().connect/link().then....
     
     /* First parameter is the mysql string,object or already defined mysql connection object ( conencted or no connected)
      * Second parameter true or false if this is the only one connection in your project (defaults to true)
@@ -74,9 +74,12 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
      * 
      * instead of calling mysqlCon.table('tablename').model({object or criteria}).
      * All methods bellow do the same thing, returns the user which it's user_id equals to 18.
-     * _W stands for 'Wrapper', indicates: both of MySQLTable & MySQLTable, returns the correct is a matter of how many arguments you pass on. Look how it works:
+     * _W stands for 'Wrapper', indicates: the DefaultConnection, MySQLTable & MySQLTable, returns the correct is a matter of how many arguments you pass on. Look how it works:
     */
     /*
+     * DefaultConnection use:
+     *  var _mysqlCon = _W();
+     * _mysqlCon.destroy(); // _W().destroy() , destroy the connection
     //TABLE use:
     var userTable = MySQLTable('users');
     //OR
@@ -196,7 +199,7 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
     var findAllLikesFromUserId = _W("comment_likes", { userId: 18 }).find();
     var findAllCommentsFromUserId = _W("comments", { userId: 18 }).find();
     
-    _W.when(findAllByUsername, findAllLikesFromUserId,findAllCommentsFromUserId).then(function (_results) {
+    _W.when(findAllByUsername, findAllLikesFromUserId, findAllCommentsFromUserId).then(function (_results) {
         
         console.log('find all users with USERNAME results: ');
         console.dir(_results[0]);
@@ -206,7 +209,25 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...
         console.dir(_results[2]);
         console.log('\n');
     });
+    
+    
+    console.log('\n FIND FULL USER WITH COMMENTS AND THEIR LIKES');
+    var userFactory = require('./modules/user.js');
+    userFactory.getFullUser(18, function (user) {
+        console.log("FOUND the user with username: " + user.username);
+        console.log("AND COMMENTS: ");
+        
+        [].forEach.call(user.comments, function (comment) {
+            console.log(comment.content + " with " + comment.likes.length + " likes");
+        });
+        
+        
+        //when the last test finish, lets destroy (or end) the connection
+        // _W().end(function (err) { console.log("error?" + err); });
+        mysqlCon.destroy();  //or _W().destroy();
+    });
 
+   
 });
 //END OF EXAMPLES AND TESTS.
 
@@ -216,20 +237,54 @@ httpServer.listen(httpPort, function () {
 });
 
 
-
 ```
 ### /modules/user.js
 ```js
 var Promise = require('bluebird');
 //you are seeing well, no need of require the node-mysql-wrapper, because you pass a 'true' on the second parameter on server.js
-
-var User = function(){
+var User = function () {
     
 };
 
+MySQLModel.extend("findUserWithComments", function (userId, callback) {
+    this.jsObject = { userId: userId, comments: { userId : '=' } }; //We CANNOT DO comments{ userId: '=', likes: { commentId : '='}}, we will fetch comment's likes later in this function, only first-level relationship tables can be fetched by find() method.
+    this.find().then(function (results) {
+        var _user = results[0];
+        var promises = [];
+        for (var i = 0; i < _user.comments.length ; i++) {
+            //    promises.push(_W("comment_likes", { commentId: _user.comments[i].commentId }).find());
+            var findLikes = _W("comment_likes", { commentId: _user.comments[i].commentId }).find();
+            promises.push(findLikes);
+          /*  findLikes.then(function (_res) {
+                [].forEach.call(_user.comments, function (_comment) {
+                    
+                    if (_comment.commentId === _res[0].commentId) {
+                        _comment.likes = _res;
+                        //_user.comments.push(_comment);
+                    }
+                });
+                
+            }); OR: */
+        };
+        
+        _W.when(promises).then(function (_commentLikesAllresults) {
+            [].forEach.call(_user.comments, function (_comment) {
+                [].forEach.call(_commentLikesAllresults, function (_commentLikesList) {
+                    if (_commentLikesList[0].commentId === _comment.commentId) {
+                        _comment.likes = _commentLikesList;
+                    }
+                });
+            });
+            callback(_user);
+           
+        });
+
+    });
+});
+
 User.prototype.login = function (mail, password) {
     var def = Promise.defer();
-
+    
     _W('users', { mail: mail, password: password }).find().then(function (results) {
         if (results.length > 0) {
             def.resolve(results[0]);
@@ -237,10 +292,10 @@ User.prototype.login = function (mail, password) {
             def.reject();
         }
     });
-
+    
     return def.promise;
 };
- //OR
+//OR
 User.prototype.login2 = function (mail, password) {
     var def = Promise.defer();
     var userTable = new MySQLTable('users');
@@ -255,6 +310,11 @@ User.prototype.login2 = function (mail, password) {
     return def.promise;
 };
 
+User.prototype.getFullUser = function (userId, callback) {
+    _W("users", {}).findUserWithComments(userId, function (_userReturned) {
+        callback(_userReturned);
+    });
+};
 
 
 module.exports = new User();

@@ -5,12 +5,11 @@ var User = function () {
 };
 
 MySQLModel.extend("findUserWithComments", function (userId, callback) {
-    var self = this;
     this.jsObject = { userId: userId, comments: { userId : '=' } }; //We CANNOT DO comments{ userId: '=', likes: { commentId : '='}}, we will fetch comment's likes later in this function, only first-level relationship tables can be fetched by find() method.
     this.find().then(function (results) {
         var _user = results[0];
         var promises = [];
-        for (var i = 0; i < _user.comments.length ; i++) { 
+        for (var i = 0; i < _user.comments.length ; i++) {
             //    promises.push(_W("comment_likes", { commentId: _user.comments[i].commentId }).find());
             var findLikes = _W("comment_likes", { commentId: _user.comments[i].commentId }).find();
             promises.push(findLikes);
@@ -40,6 +39,7 @@ MySQLModel.extend("findUserWithComments", function (userId, callback) {
 
     });
 });
+
 User.prototype.login = function (mail, password) {
     var def = Promise.defer();
     
@@ -73,8 +73,6 @@ User.prototype.getFullUser = function (userId, callback) {
         callback(_userReturned);
     });
 };
-
-
 
 
 module.exports = new User();
