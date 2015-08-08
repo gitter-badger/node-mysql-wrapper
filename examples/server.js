@@ -88,44 +88,49 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
     */
     /*END IF */
     
-    
-    
-    /*one to one relation ship if finds only one result. userInfos will be undefined and new property called  'userInfo' stores the row which it's user_id = 18.*/
-    //next line  means the value of the primary key of the parent-relationship object.(userId=18) [ the commentId:'=' inside comment's likes doesnt work yet.
-    var findUserWithInfo = _W('users', { username: 'a username', userInfos: { userId: '=' }, comments: { userId: '=' } , whateversharedProperty: 'whatever-no db' });
-    
-    findUserWithInfo.find().then(function (results) {
-        if (!results) {
-            console.log('didnt find this user');
-            return;
-        }
-        
-        console.log('Found ' + results.length + ' users');
-        
-        for (var i = 0; i < results.length; i++) {
-            var _user = results[i];
-            console.log('I found the user ' + _user.username + ' with user id ' + _user.userId + (_user.userInfos.length > 0 ? ' which hometown is: ' + _user.userInfos[0].hometown: ''));
-            
-            if (_user.comments !== undefined && _user.comments.length > 0) {
-                for (var j = 0; j < _user.comments.length; j++) {
-                    
-                    console.log('Comment content: ' + _user.comments[j].content);
-                }
+    //LET'S START...
+     /*
+        find all users with years_old(column) == 22, find their user_infos where user_infos's user_id column matched with the user_id of the user
+        find their comments too, for each one comment find all likes and their likers ( users who liked ) .
+        SO EASY, WITH 'ONE LINE' code. ->
+    */
+    _W("users", 
+        {
+        yearsOld: 22,
+        userInfos: { userId : '=' },
+        comments: {
+            userId: '=' , 
+            commentLikes: {
+                commentId : '=', 
+                users: { userId : '=' }
             }
         }
-   
-
-
+    }).find().then(function (_results) {
+        [].forEach.call(_results, function (result) {
+            console.dir(result);
+            console.log("=========COMMENTS from " + result.username + (result.userInfos.length > 0 ?  " which hometown is " + result.userInfos[0].hometown : '') + " ======\n");
+            
+            [].forEach.call(result.comments, function (comment) {
+                console.log(comment.content + " with " + comment.commentLikes.length + " likes!");
+                
+                if (comment.commentLikes.length > 0)
+                    console.log('first like on this comment liked by: ' + comment.commentLikes[0].users[0].username);
+            });
+            
+            console.log("===============\n\n");
+        });
+        
     });
     
-    
-    /*   var oneUserToDelete = _W('users', { userId: 16 }).safeDelete().then(function (jsRes) {
+    // DELETE ONE ROW EXAMPLE: 
+    var oneUserToDelete = _W('users', { userId: 16 }).safeDelete().then(function (jsRes) {
         if (jsRes.affectedRows > 0) {
             console.log('deleted');
         }
   
     }); //When you want to delete a row using primary key (safe way), you could also use .delete() for this too, it will do the same thing .
     
+    //DELETE MAYBE MORE THAN ONE ROW EXAMPLE: 
     var someUsersToDelete = _W('users', { username: 'usernames to delete' }).delete().then(function (jsRes) { //When you want to delete row(s) without using primary key 
         if (jsRes.affectedRows > 0) {
             console.log(jsRes.affectedRows + ' users with username: ' + jsRes.username + ' have gone :(');
@@ -133,6 +138,9 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
     });
     
     
+    
+    
+    // USE THE _W ON ANY OF YOUR OWN JS FILES/MODULES EXAMPLE: 
     var userFactory = require('./modules/user.js');
     userFactory.login("updated18@omakis.com", "a pass").then(function (userFound) {
         console.log("===== USER LOGIN ======");
@@ -141,20 +149,22 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
     function () {
         console.error('Invalid mail or password!');
     });
-
+    
+    
+    // CREATE , AND AFTER UPDATE A ROW EXAMPLE: 
     var userModel = _W("users", { username: "an updated x username 1nd time" , mail: "an updated mail for user id x 1st time" });
     //create new user 
     userModel.save().then(function (_newCreatedUser) {
         //update this user
-        userModel.save("an updated username for user_id " + userModel.primaryKeyValue + "  or "+ _newCreatedUser.userId+" 2nd time", "an updated mail for user id " + userModel.primaryKeyValue + " 2nd time"); //1st parameter  follows the username, the first parameter of our model except the first which is the primary key userId 18, the second parameter follows the third of our model which is the 'mail' property's value.
+        userModel.save("an updated username for user_id " + userModel.primaryKeyValue + "  or " + _newCreatedUser.userId + " 2nd time", "an updated mail for user id " + userModel.primaryKeyValue + " 2nd time"); //1st parameter  follows the username, the first parameter of our model except the first which is the primary key userId 18, the second parameter follows the third of our model which is the 'mail' property's value.
   
     });
     
-     */
-   
- 
-     //EXTEND the Model:
-      MySQLModel.extend("mailExists", function (mail, callback) {//this is a shared custom function extends for all models.
+    
+    
+    
+    //EXTEND THE MODEL EXAMPLE:
+    MySQLModel.extend("mailExists", function (mail, callback) {//this is a shared custom function extends for all models.
         
         //this =  the caller's MySQLModel, for example this =  the new  MySQLModel("users",{}), where this.table.name = "users", look at the next function.
         this.connection.query("SELECT COUNT(*) FROM " + this.table.name + " WHERE mail = " + this.connection.escape(mail), function (err, results) {
@@ -167,18 +177,18 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
 
     });
     
-    //or _W("users",{}).mailExists.... or _W("Whatevermodel",{})
+    /*  USE YOUR OWN CUSTOM SHARED-EXTENDED FUNCTION FROM ANY MODEL:   
     new MySQLModel("users", {}).mailExists("mail20_updated@omakis.com", function (trueOrFalse) {
         console.log("User mail exists? " + trueOrFalse);
-    });
-    /* 
+    });   
+      OR: 
     _W("admins", {}).mailExists("mailadmin1@omakis.com", function (trueorfalse) {
         console.log("Admin mail exists? " + trueorfalse);
     });   
+  
     */
 
-
-    // _W.When example:
+    // _W.When EXAMPLE:
 
     var findAllByUsername = _W("users", { username: 'a username' }).find();
     var findAllLikesFromUserId = _W("comment_likes", { userId: 18 }).find();
@@ -195,22 +205,8 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
         console.log('\n');
     });
     
-    
-    console.log('\n FIND FULL USER WITH COMMENTS AND THEIR LIKES');
-    var userFactory = require('./modules/user.js');
-    userFactory.getFullUser(18, function (user) {
-        console.log("FOUND the user with username: " + user.username);
-        console.log("AND COMMENTS: ");
-        
-        [].forEach.call(user.comments, function (comment) {
-            console.log(comment.content + " with " + comment.likes.length + " likes");
-        });
-        
-        
-        //when the last test finish, lets destroy (or end) the connection
-        // _W().end(function (err) { console.log("error?" + err); });
-        mysqlCon.destroy();  //or _W().destroy();
-    });
+
+
 
    
 });

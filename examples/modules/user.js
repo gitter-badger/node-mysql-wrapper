@@ -1,11 +1,12 @@
 ﻿var Promise = require('bluebird');
-//you are seeing well, no need of require the node-mysql-wrapper, because you pass a 'true' on the second parameter on server.js
+//you are understand it, no need of require the node-mysql-wrapper, because you pass a 'true' on the second parameter on server.js
 var User = function () {
     
 };
 
 MySQLModel.extend("findUserWithComments", function (userId, callback) {
-    this.jsObject = { userId: userId, comments: { userId : '=' } }; //We CANNOT DO comments{ userId: '=', likes: { commentId : '='}}, we will fetch comment's likes later in this function, only first-level relationship tables can be fetched by find() method.
+    this.jsObject = { userId: userId, comments: { userId : '=' } };
+    //We CAN DO this.jsObject = { userId: userId,comments{ userId: '=', commentLikes: { commentId : '='}},  but we will not because this is  for example purpose.
     this.find().then(function (results) {
         var _user = results[0];
         var promises = [];
