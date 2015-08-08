@@ -26,7 +26,7 @@ MySQLModel.extend("findUserWithComments", function (userId, callback) {
             }); OR: */
         };
         
-        Promise.all(promises).then(function (_commentLikesAllresults) {
+        _W.when(promises).then(function (_commentLikesAllresults) {
             [].forEach.call(_user.comments, function (_comment) {
                 [].forEach.call(_commentLikesAllresults, function (_commentLikesList) {
                     if (_commentLikesList[0].commentId === _comment.commentId) {
