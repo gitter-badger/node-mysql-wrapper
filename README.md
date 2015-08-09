@@ -78,8 +78,12 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
     */
     /*
      * DefaultConnection use:
-     *  var _mysqlCon = _W();
-     * _mysqlCon.destroy(); // _W().destroy() , destroy the connection
+     *  var _mysqlDefaultCon = _W();
+     * _mysqlDefaultCon.destroy(); // _W().destroy() , destroy the connection
+     */
+
+     //LET'S START!
+     /*
     //TABLE use:
     var userTable = MySQLTable('users');
     //OR
@@ -103,13 +107,54 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
     */
     /*END IF */
     
-    //LET'S START...
+    //TABLE EVENTS EXAMPLE/ USAGE: 
+    /*
+    var insertWatcher = function (_results) {
+        console.log(' ___________from table users an INSERT query just finished... with results: ________');
+        console.dir(_results);
+    
+    };
+    _W("users").on("insert", insertWatcher); //or .watch("insert",...)
+    
+    _W("users").on("update", function (_results) {
+        console.log(' ___________from table users an UPDATE query just finished... with results: ________');
+        console.dir(_results);
+    
+    }); //or .watch("save") for both cases (insert or/and update).
+    
+    _W("users").on("save", function (_results) {
+        console.log(' ___________from table users a SAVE ( =update or insert) query just finished... with results: ________');
+        console.dir(_results);
+    
+    });
+    
+    _W("users").on("delete", function (_results) {
+        console.log(' ___________from table users a DELETE query just finished... with results: ________');
+        console.dir(_results);
+    });
+    
+    //watch on multy type of query statements  with one callback
+    _W("users").on(["insert", "update", "delete"], function (_results) {
+        console.log(' insert or update or delete query statement on users table just return back some parsed results');
+    });
+    
+    _W("users", { mail: 'a new mail for new user just created', username: 'a new user just created!' }).save();
+    
+    _W("users", { userId: 33 }).delete();
+    
+    _W("users", { userId: 35 , username: 'a new username for user id 35' }).save();
+    
+    //to remove a listener, or turn off the watcher do: 
+    _W("users").off("insert",insertWatcher); // or .unwatch
+    */
+   
      /*
         find all users with years_old(column) == 22, find their user_infos where user_infos's user_id column matched with the user_id of the user
         find their comments too, for each one comment find all likes and their likers ( users who liked ) .
         SO EASY, WITH 'ONE LINE' code. ->
     */
-    _W("users", 
+    
+    /*_W("users", 
         {
         yearsOld: 22,
         userInfos: { userId : '=' },
@@ -136,9 +181,9 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
         });
         
     });
-    
+   */
     // DELETE ONE ROW EXAMPLE: 
-    var oneUserToDelete = _W('users', { userId: 16 }).safeDelete().then(function (jsRes) {
+  /*  var oneUserToDelete = _W('users', { userId: 16 }).safeDelete().then(function (jsRes) {
         if (jsRes.affectedRows > 0) {
             console.log('deleted');
         }
@@ -164,7 +209,7 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
     function () {
         console.error('Invalid mail or password!');
     });
-    
+   
     
     // CREATE , AND AFTER UPDATE A ROW EXAMPLE: 
     var userModel = _W("users", { username: "an updated x username 1nd time" , mail: "an updated mail for user id x 1st time" });
@@ -175,11 +220,11 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
   
     });
     
+     */
     
     
-    
-    //EXTEND THE MODEL EXAMPLE:
-    MySQLModel.extend("mailExists", function (mail, callback) {//this is a shared custom function extends for all models.
+   /*  //EXTEND THE MODEL EXAMPLE:
+    _W.extend("mailExists", function (mail, callback) {// OR MySQLModel.extend... this is a shared custom function extends for all models.
         
         //this =  the caller's MySQLModel, for example this =  the new  MySQLModel("users",{}), where this.table.name = "users", look at the next function.
         this.connection.query("SELECT COUNT(*) FROM " + this.table.name + " WHERE mail = " + this.connection.escape(mail), function (err, results) {
@@ -191,17 +236,22 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
         });
 
     });
-    
-    /*  USE YOUR OWN CUSTOM SHARED-EXTENDED FUNCTION FROM ANY MODEL:   
+    /* NOTE: If your extend method contains insert,update or delete queries and you watch these queries ( look at the top) , then you have to 
+    * call the callbacks from event's listeners, you do this with this line of code:
+    * this.connection.notice(this.table.name, _query, theResultsWillBePassedInTheListenerCallback); //where this = inside the extend function which is the model class/object.
+    */
+
+    /*
+    //USE YOUR OWN CUSTOM SHARED-EXTENDED FUNCTION FROM ANY MODEL:   
     new MySQLModel("users", {}).mailExists("mail20_updated@omakis.com", function (trueOrFalse) {
         console.log("User mail exists? " + trueOrFalse);
-    });   
+    });    
       OR: 
     _W("admins", {}).mailExists("mailadmin1@omakis.com", function (trueorfalse) {
         console.log("Admin mail exists? " + trueorfalse);
     });   
   
-    */
+    
 
     // _W.When EXAMPLE:
 
@@ -220,7 +270,7 @@ mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().conn
         console.log('\n');
     });
     
-
+   */
 
 
    
