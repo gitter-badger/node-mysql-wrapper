@@ -3,7 +3,6 @@
 [![NPM Version][npm-image]][npm-url]
 [![Node.js Version][node-version-image]][node-version-url]
 
-<<<<<<< HEAD
 
 ## Table of Contents
 
@@ -22,10 +21,6 @@
 - [Todo](#todo)
 
 ## Install
-=======
-## UPDATE 13 August 2015. Next upcoming version changes a lot of these you will see next, I done with the new code and I'm writing a -well documented how to use- wiki . When I finish it I will publish the 1.1 version with new examples also, please be pattient 2-3 days max!
-## Installation
->>>>>>> origin/master
 
 ```sh
 $ npm install node-mysql-wrapper
