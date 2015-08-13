@@ -1,377 +1,474 @@
 ﻿# node-mysql-wrapper
 
-This is a node js module which manages mysql (node-mysql) connection and models with a way that you are expecting! 
+[![NPM Version][npm-image]][npm-url]
+[![Node.js Version][node-version-image]][node-version-url]
 
-## Installation
+
+## Table of Contents
+
+- [Install](#install)
+- [Introduction](#introduction)
+- [Contributors](#contributors)
+- [Community](#community)
+- [Establishing connections](#establishing-connections)
+- [Connection options](#connection-options)
+- [Terminating connections](#terminating-connections)
+- [Tables](#tables)
+- [Performing queries](#performing-queries)
+- [Table events](#table-events)
+- [Extending a table](#extending-a-table)
+- [Running tests](#running-tests)
+- [Todo](#todo)
+
+## Install
 
 ```sh
 $ npm install node-mysql-wrapper
 ```
 
-[NPM] https://www.npmjs.com/package/node-mysql-wrapper
+Sometimes I may also ask you to install the latest version from Github to check
+if a bugfix is working. In this case, please do:
 
-## Usage
-### server.js
+```sh
+$ npm install kataras/node-mysql-wrapper
+```
+
+## Introduction
+
+This is a node.js wrapper for node-mysql driver package. It is written in JavaScript, does not
+require compiling, and is 100% GPL-3.0 licensed.
+
+Here is an example on how to use it:
+
 ```js
-var express = require('express');
-var app = express();
-var httpServer = require('http').createServer(app);
-var path = require('path');
-var config = require('config');
-var dbConfig = require('./config/database.json')[process.env.NODE_ENV || 'development'];
+var mysql      = require('mysql');
+var connection = mysql.createConnection({
+  host     : 'localhost',
+  user     : 'me',
+  password : 'secret',
+  database : 'my_db'
+});
 
-//EXAMPLES AND TESTS BEGIN
-//  START OF INIT CONNECTION EXPLAINATION
-/* You have 3 options to attach a connection to the wrapper
- * 
- * 1. If you dont have an already mysql connection object do:
- *  1.1 Use object with host,user,password and database,
- *  1.2 Use a connection string as described later.
- * 
- * 2. If you have an already  mysql connection object, connected or no connected do:
- *  2.1 Just pass this object to the wrapper module.
- * 
- * For '1' and for '2' you have always to start/connect/link the module  with mysqlCon.connect() or .link(), they do the same thing.
- * Second parameter:  true means that this is the only one connection in the whole node js project, global variables MySQLTable, MySQLModel and _W will be available to use without help of mysqlCon variable to use tables and create models.
- * Examples to init the connection and wrapper:
- */
+var db = require('node-mysql-wrapper')(connection);
+//or (without need of require mysql module) ->
+var db = require('node-mysql-wrapper')("mysql://user:pass@127.0.0.1/databaseName?debug=false&charset=utf8");
 
-/*1.1 
- * var mysqlCon = require('./../index')({
-    host     : '127.0.0.1',
-    user     : 'kataras',
-    password : 'pass',
-    database: 'taglub'
-},true);
- *1.2
- * var mysqlCon = require('./../index')("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8",true);
- *2.1
- *  var mysql = require('mysql');
- *  var originalMySqlConnection = mysql.createConnection("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8");
- *  var mysqlCon = require('./../index')(originalMySqlConnection, true); 
- *   //OR
- * originalMySqlConnection.connect().then(function () {
- *  var mysqlCon = require('./../index')(originalMySqlConnection, true);
- * });
- * 
- * after '1' and '2' do always: mysqlCon.link().then(function () { ... your code here });
-*/
-//  END OF INIT CONNECTION EXPLAINATION
+db.ready(function(){
+	//your code goes here	
+	//users -> an example table inside the database, just call it like property:
 
-var mysqlCon = require('node-mysql-wrapper')("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8"); // all parameters are default to true, means that this is the only one connection and also use the globals variables (_W,MySQLTable,MySQLModel)
+	db.users.find({userId:18},function(rowResults){
+	    console.dir(rowResults[0]);
+
+		//to destroy the whole connection, its events and its tables use: 
+		db.destroy();
+	
+    }); //or using promises: find({...}).then(function(rowResults){...});
+    
+
+});
+```
+
+From this example, you can learn the following:
+
+* Every method you invoke on a table is queued and executed in asynchronous way, using callbacks or promises.
+* Closing the connection is done using `destroy()` which makes sure all remaining
+  queries are executed before sending a quit packet to the mysql server.
+
+## Contributors
+
+Thanks goes to the people who have contributed code to this module, see the
+[GitHub Contributors page][].
+
+[GitHub Contributors page]: https://github.com/kataras/node-mysql-wrapper/graphs/contributors
 
 
 
-//IF you only want to use only certain tables from your database, and not all of them, do that before the connect:
-//mysqlCon.useOnly('users',['comments','comment_likes']); //argument(s) can be array of strings or just string(s).
-//END IF
+## Community
 
-mysqlCon.connect().then(function () { //OR mysqlCon.link().then...  OR _W().connect/link().then....
-    
-    /* First parameter is the mysql string,object or already defined mysql connection object ( conencted or no connected)
-     * Second parameter true or false if this is the only one connection in your project (defaults to true)
-     * Third parameter true or false , that you can have directly and global access to MySQLModel, MySQLTable and _W (MySQLWrapper) object. (defaults to true)
-     * 
-     * instead of calling mysqlCon.table('tablename').model({object or criteria}).
-     * All methods bellow do the same thing, returns the user which it's user_id equals to 18.
-     * _W stands for 'Wrapper', indicates: the DefaultConnection, MySQLTable & MySQLTable, returns the correct is a matter of how many arguments you pass on. Look how it works:
-    */
-    /*
-     * DefaultConnection use:
-     *  var _mysqlDefaultCon = _W();
-     * _mysqlDefaultCon.destroy(); // _W().destroy() , destroy the connection
-     */
+If you'd like to discuss this module, or ask questions about it, please use one
+of the following:
 
-     //LET'S START!
-     /*
-    //TABLE use:
-    var userTable = MySQLTable('users');
-    //OR
-    var userTable = _W('users'); // _W with one parameter/argument means: return MySQLTable with a name of arguments[0]. //yes without 'new' keyword, it will auto find the correct table.
-    
-    userTable.model({ userId: 18 }).find().then(function (results) {
-        console.log('Found with username: ' + results[0].username);
-    });
-    
-    //userTable.model({username : 'username which exists on 4 rows'})... // you can use this table for create more models or criteria filters for find.
-    
-    //AND MODEL ONLY use: 
-    
-    var model = new MySQLModel('users', { userId: 18 });
-    //OR
-    var model = _W('users', { userId: 18 });// _W with two parameters/arguments means: create and return new MySQLModel from table of arguments[0] and object or criteria of arguments[1].
-    
-    model.find().then(function (results) {
-        console.log('Found with username: ' + results[0].username);
-    });
-    */
-    /*END IF */
-    
-    //TABLE EVENTS EXAMPLE/ USAGE: 
-    /*
-    var insertWatcher = function (_results) {
-        console.log(' ___________from table users an INSERT query just finished... with results: ________');
-        console.dir(_results);
-    
-    };
-    _W("users").on("insert", insertWatcher); //or .watch("insert",...)
-    
-    _W("users").on("update", function (_results) {
-        console.log(' ___________from table users an UPDATE query just finished... with results: ________');
-        console.dir(_results);
-    
-    }); //or .watch("save") for both cases (insert or/and update).
-    
-    _W("users").on("save", function (_results) {
-        console.log(' ___________from table users a SAVE ( =update or insert) query just finished... with results: ________');
-        console.dir(_results);
-    
-    });
-    
-    _W("users").on("delete", function (_results) {
-        console.log(' ___________from table users a DELETE query just finished... with results: ________');
-        console.dir(_results);
-    });
-    
-    //watch on multy type of query statements  with one callback
-    _W("users").on(["insert", "update", "delete"], function (_results) {
-        console.log(' insert or update or delete query statement on users table just return back some parsed results');
-    });
-    
-    _W("users", { mail: 'a new mail for new user just created', username: 'a new user just created!' }).save();
-    
-    _W("users", { userId: 33 }).delete();
-    
-    _W("users", { userId: 35 , username: 'a new username for user id 35' }).save();
-    
-    //to remove a listener, or turn off the watcher do: 
-    _W("users").off("insert",insertWatcher); // or .unwatch
-    */
-   
-     /*
-        find all users with years_old(column) == 22, find their user_infos where user_infos's user_id column matched with the user_id of the user
-        find their comments too, for each one comment find all likes and their likers ( users who liked ) .
-        SO EASY, WITH 'ONE LINE' code. ->
-    */
-    
-    /*_W("users", 
-        {
-        yearsOld: 22,
-        userInfos: { userId : '=' },
-        comments: {
-            userId: '=' , 
-            commentLikes: {
-                commentId : '=', 
-                users: { userId : '=' }
-            }
-        }
-    }).find().then(function (_results) {
-        [].forEach.call(_results, function (result) {
-            console.dir(result);
-            console.log("=========COMMENTS from " + result.username + (result.userInfos.length > 0 ?  " which hometown is " + result.userInfos[0].hometown : '') + " ======\n");
-            
-            [].forEach.call(result.comments, function (comment) {
-                console.log(comment.content + " with " + comment.commentLikes.length + " likes!");
-                
-                if (comment.commentLikes.length > 0)
-                    console.log('first like on this comment liked by: ' + comment.commentLikes[0].users[0].username);
-            });
-            
-            console.log("===============\n\n");
-        });
-        
-    });
-   */
-    // DELETE ONE ROW EXAMPLE: 
-  /*  var oneUserToDelete = _W('users', { userId: 16 }).safeDelete().then(function (jsRes) {
-        if (jsRes.affectedRows > 0) {
-            console.log('deleted');
-        }
-  
-    }); //When you want to delete a row using primary key (safe way), you could also use .delete() for this too, it will do the same thing .
-    
-    //DELETE MAYBE MORE THAN ONE ROW EXAMPLE: 
-    var someUsersToDelete = _W('users', { username: 'usernames to delete' }).delete().then(function (jsRes) { //When you want to delete row(s) without using primary key 
-        if (jsRes.affectedRows > 0) {
-            console.log(jsRes.affectedRows + ' users with username: ' + jsRes.username + ' have gone :(');
-        }
-    });
-    
-    
-    
-    
-    // USE THE _W ON ANY OF YOUR OWN JS FILES/MODULES EXAMPLE: 
-    var userFactory = require('./modules/user.js');
-    userFactory.login("updated18@omakis.com", "a pass").then(function (userFound) {
-        console.log("===== USER LOGIN ======");
-        console.log('Valid user with ID: ' + userFound.userId + ' and username: ' + userFound.username);
-    }, 
-    function () {
-        console.error('Invalid mail or password!');
-    });
-   
-    
-    // CREATE , AND AFTER UPDATE A ROW EXAMPLE: 
-    var userModel = _W("users", { username: "an updated x username 1nd time" , mail: "an updated mail for user id x 1st time" });
-    //create new user 
-    userModel.save().then(function (_newCreatedUser) {
-        //update this user
-        userModel.save("an updated username for user_id " + userModel.primaryKeyValue + "  or " + _newCreatedUser.userId + " 2nd time", "an updated mail for user id " + userModel.primaryKeyValue + " 2nd time"); //1st parameter  follows the username, the first parameter of our model except the first which is the primary key userId 18, the second parameter follows the third of our model which is the 'mail' property's value.
-  
-    });
-    
-     */
-    
-    
-   /*  //EXTEND THE MODEL EXAMPLE:
-    _W.extend("mailExists", function (mail, callback) {// OR MySQLModel.extend... this is a shared custom function extends for all models.
-        
-        //this =  the caller's MySQLModel, for example this =  the new  MySQLModel("users",{}), where this.table.name = "users", look at the next function.
-        this.connection.query("SELECT COUNT(*) FROM " + this.table.name + " WHERE mail = " + this.connection.escape(mail), function (err, results) {
+* **Mailing list**: https://groups.google.com/forum/#!forum/node-mysql-wrapper
+* **IRC Channel**: http://irc.lc/freenode/node-mysql-wrapper/ 
+
+## Establishing connections
+
+The recommended way to establish a wrapped-connection is this:
+
+```js
+var db = require('node-mysql-wrapper')("mysql://user:pass@127.0.0.1/databaseName?debug=false&charset=utf8");
+
+db.ready(function(){ 
+
+});
+```
+
+However, a wrapped-connection can also be implicitly established by wrapping an existing mysql connection:
+
+```js
+var mysql      = require('mysql');
+var connection = mysql.createConnection({
+  host     : 'localhost',
+  user     : 'me',
+  password : 'secret',
+  database : 'my_db'
+});
+
+var db = require('node-mysql-wrapper')(connection);
+
+db.ready(function(){
+
+});
+```
+
+Depending on how you like to code, either method may be
+appropriate. But in order to works  always use .ready and a callback inside it.
+
+## Connection options
+
+Read them at the [node-mysql module](https://github.com/felixge/node-mysql/#connection-options) documentation
+
+
+
+## Terminating connections
+
+There are two ways to end a connection. Terminating a connection gracefully is
+done by calling the `end()` method:
+
+```js
+db.end(function(err) {
+  // The connection, table events and queries are terminated now
+}); 
+//Surely you can have a direct access to mysql connection from db.connection object, if you ever need it.
+```
+
+This will make sure all previously enqueued queries are still before sending a
+`COM_QUIT` packet to the MySQL server. If a fatal error occurs before the
+`COM_QUIT` packet can be sent, an `err` argument will be provided to the
+callback, but the connection will be terminated regardless of that.
+
+An alternative way to end the connection is to call the `destroy()` method.
+This will cause an immediate termination of the underlying socket.
+Additionally `destroy()` guarantees that no more events or callbacks will be
+triggered for the connection.
+
+```js
+db.destroy();
+```
+
+Unlike `end()` the `destroy()` method does not take a callback argument.
+
+
+## Tables
+
+### Manual select which tables you want to use. (default all)
+
+```js
+ db.useOnly('users','comments',['or_an_array_of_tables','comment_likes']);
+ //this goes before db.ready function.
+```
+
+### Getting a table object
+```js
+//all code you will see bellow goes inside db.ready(function () { //code here });
+var usersTable = db.users; //yes, just this :)
+console.log('available columns: '+ usersTable.columns);
+console.log('primary key column name: '+ usersTable.primaryKey);
+console.log('find, save, delete, safeDelete methods can be called by this table');
+
+usersTable.find({userId:18},function(results){
+
+});
+
+```
+## Performing queries 
+
+### Method queries
+
+They are 4 types of method queries, the find (select), save (insert or update), delete, and safeDelete(deletes only by primary key). All values you pass there are auto-escaped to protect the database from sql injections.
+
+If you don't pass a callback inside method  it returns a promise. Which you can use later.
+ 
+Column keys are auto converted to object properties, this means that user_id column on database table will be available as userId, same for table names too.
+
+**Simple find method** by 'user_id', find method always returns an array.
+```js
+db.users.find({userId:18},function(results){
+	console.dir(results[0]);
+});
+```
+
+**An advanced  find method**. Find all users where years_old = 22, find the user's info, find user's comments, the comment's likes and users who liked them.
+```js
+var criteria= {
+	yearsOld:22,
+	userInfos : { 
+		userId : '='
+	},
+	comments: {
+		userId: '=',
+		commentLikes: {
+			commentId: '=',
+			users: {
+				userId : '='
+			}
+		} 
+	}
+};
+//'=' means: put the parent object's property's value.
+
+db.users.find(criteria,function(results){
+	console.dir(results);
+});
+```
+
+**Save method**  Returns a single object, also updates the variable you pass into.
+```js
+
+var newUser = { username: 'a new user', yearsOld: 23, mail: 'newmail@mail.com' };
+
+db.users.save(newUser).then(function(result){ //if you want use a promise
+	console.log('New user just created, new userId:'
+	+ result.userId+ ' which is the same as newUser.userId now:' +newUser.userId);
+		
+	result.username = 'an updated new username';	
+	
+	db.users.save(result,function(_result){
+		console.log('User is just updated, because we have already a primary key setted at this object, affected rows (1): ' +_result.affectedRows);
+		
+	});
+		
+});
+
+
+```
+
+**Delete method**
+
+```js
+//delete all rows from users table where years_old = 22
+db.users.delete({yearsOld:22},function(results){
+	console.log(results.affectedRows+ ' rows deleted.');
+});
+```
+
+**safeDelete method** you can do the same thing with .delete method also
+
+```js
+//delete a single row by its primary key
+db.users.safeDelete({userId:4},function(results){
+	console.log('just deleted a user');
+});
+```
+
+
+
+Also you can **wait for multiple query methods to finish** before you do something using db.when method:
+
+```js
+var findAUser = db.users.find({userId:16});
+var findMoreUsers = db.users.find({username: 'a username'});
+var findSomeComments = db.comments.find({userId:16});
+
+//you can pass an array of promises too.
+db.when(findAUser,findMoreUsers,findSomeComments).then(function(results) {
+	/*
+results -> results[0] -> findAUser results , results[1]->findMoreUsers results  , results[2] ->findSomeComments  results.
+	*/
+
+});
+```
+
+### Plain queries - the module's purpose is to never need to use this way.
+To perform a plain custom query  call the `.query()` method on a wrapped-db  object.
+
+The simplest form of .`query()` is `.query(sqlString, callback)`, where a SQL string
+is the first argument and the second is a callback:
+
+```js
+db.query('SELECT * FROM `users` WHERE `user_id` = 18', function (error, results) {
+  // error will be an Error if one occurred during the query
+  // results will contain the results of the query
+});
+```
+( to escape a value here just use db.connection.escape(value) )
+
+## Table events
+
+### on /watch
+
+Each method/query will emit a `table` event when a new type of query executed and parsed. 
+If you need to log or test results on the table before it gets used, you can
+listen to these events: insert, update, delete and save( for both insert and update) .
+
+Note: Events are always executed before callbacks or promises.
+
+```js
+//users -> an example table on a database, call it like a normal property
+var usersInsertWatcher = function(parsedInsertedRows){
+	console.log('Somewhere an insert query executed on USERS table : ');
+	console.dir(parsedInsertedRows);
+};
+
+var usersDeleteWatcher = function(deleted){
+	console.log('Somewhere a delete query executed on USERS table : ');
+	console.log('Affected rows number: '+ deleted.affectedRows);
+};
+
+db.users.on('insert',usersInsertWatcher);
+db.users.on('delete',usersDeleteWatcher); //and so on...
+```
+
+### off /unwatch
+
+To turn off an event on a table just call db.table.off('event_type',the_callback_variable_to_remove)
+
+```js
+db.users.off('insert',usersInsertWatcher);
+db.users.off('delete',usersDeleteWatcher);
+```
+
+## Extending a table
+
+Any table can be extending to your own custom needs, with custom method queries, using this syndax:
+
+### db.tablename.extend('functionName',theFunction);
+
+An example is always better, let's suppose that we have a users table with some columns, one of these columns is the 'mail' column, and we want to find if a user  exists with a mail in our users table. Ofcourse we could use the already find method, but just for example purpose: 
+```js
+
+if(db.users.has('mailExists') === false) //not necessary
+{
+	db.users.extend('mailExists',function(mail,callback){
+	//this = the users table, so this.name = 'users'
+	var q= "SELECT COUNT(*) FROM " + this.name + " WHERE mail = " + 
+	db.connection.escape(mail);
+		
+		db.query(q, function (err, results) {
             if (!err && results.length > 0 && results[0]["COUNT(*)"] > 0) {
-                callback(true);
-            } else {
-                callback(false);
+                 callback(true);
+                } else {
+                  callback(false);
             }
-        });
+       });
+	});
 
-    });
-    /* NOTE: If your extend method contains insert,update or delete queries and you watch these queries ( look at the top) , then you have to 
-    * call the callbacks from event's listeners, you do this with this line of code:
-    * this.connection.notice(this.table.name, _query, theResultsWillBePassedInTheListenerCallback); //where this = inside the extend function which is the model class/object.
-    */
-
-    /*
-    //USE YOUR OWN CUSTOM SHARED-EXTENDED FUNCTION FROM ANY MODEL:   
-    new MySQLModel("users", {}).mailExists("mail20_updated@omakis.com", function (trueOrFalse) {
-        console.log("User mail exists? " + trueOrFalse);
-    });    
-      OR: 
-    _W("admins", {}).mailExists("mailadmin1@omakis.com", function (trueorfalse) {
-        console.log("Admin mail exists? " + trueorfalse);
-    });   
-  
-    
-
-    // _W.When EXAMPLE:
-
-    var findAllByUsername = _W("users", { username: 'a username' }).find();
-    var findAllLikesFromUserId = _W("comment_likes", { userId: 18 }).find();
-    var findAllCommentsFromUserId = _W("comments", { userId: 18 }).find();
-    
-    _W.when(findAllByUsername, findAllLikesFromUserId, findAllCommentsFromUserId).then(function (_results) {
-        
-        console.log('find all users with USERNAME results: ');
-        console.dir(_results[0]);
-        console.log('\n find all LIKES by user id 18 results: ');
-        console.dir(_results[1]);
-        console.log('\n find all COMMENTS by user id 18 results: ');
-        console.dir(_results[2]);
-        console.log('\n');
-    });
-    
-   */
-
-
-   
-});
-//END OF EXAMPLES AND TESTS.
-
-var httpPort = 1193;//config.get('Server.port') || 1193;
-httpServer.listen(httpPort, function () {
-    console.log("Server is running on " + httpPort);
-});
-
-
-
+}
 ```
-### /modules/user.js
+
+### Use an extended method is simple
 ```js
-var Promise = require('bluebird');
-//you are understand it, no need of require the node-mysql-wrapper, because you pass a 'true' on the second parameter on server.js
-var User = function () {
-    
-};
+	db.users.mailExists('an_e-mail@mail.com',function(exists){
+		if(exists) console.log('this mail already exists!');
+		else console.log('this mail doesnt exists.');
+	});
+```
+## Running tests
 
-MySQLModel.extend("findUserWithComments", function (userId, callback) {
-    this.jsObject = { userId: userId, comments: { userId : '=' } };
-    //We CAN DO this.jsObject = { userId: userId,comments{ userId: '=', commentLikes: { commentId : '='}},  but we will not because this is  for example purpose.
-    this.find().then(function (results) {
-        var _user = results[0];
-        var promises = [];
-        for (var i = 0; i < _user.comments.length ; i++) {
-            //    promises.push(_W("comment_likes", { commentId: _user.comments[i].commentId }).find());
-            var findLikes = _W("comment_likes", { commentId: _user.comments[i].commentId }).find();
-            promises.push(findLikes);
-          /*  findLikes.then(function (_res) {
-                [].forEach.call(_user.comments, function (_comment) {
-                    
-                    if (_comment.commentId === _res[0].commentId) {
-                        _comment.likes = _res;
-                        //_user.comments.push(_comment);
-                    }
-                });
-                
-            }); OR: */
-        };
-        
-        _W.when(promises).then(function (_commentLikesAllresults) {
-            [].forEach.call(_user.comments, function (_comment) {
-                [].forEach.call(_commentLikesAllresults, function (_commentLikesList) {
-                    if (_commentLikesList[0].commentId === _comment.commentId) {
-                        _comment.likes = _commentLikesList;
-                    }
-                });
-            });
-            callback(_user);
-           
-        });
+### Import this database example to your local server, and have fan!
+```sql
 
-    });
-});
+SET FOREIGN_KEY_CHECKS=0;
 
-User.prototype.login = function (mail, password) {
-    var def = Promise.defer();
-    
-    _W('users', { mail: mail, password: password }).find().then(function (results) {
-        if (results.length > 0) {
-            def.resolve(results[0]);
-        } else {
-            def.reject();
-        }
-    });
-    
-    return def.promise;
-};
-//OR
-User.prototype.login2 = function (mail, password) {
-    var def = Promise.defer();
-    var userTable = new MySQLTable('users');
-    userTable.model({ mail: mail, password: password }).find().then(function (results) {
-        if (results.length > 0) {
-            def.resolve(results[0]);
-        } else {
-            def.reject();
-        }
-    });
-    
-    return def.promise;
-};
+-- ----------------------------
+-- Table structure for comments
+-- ----------------------------
+DROP TABLE IF EXISTS `comments`;
+CREATE TABLE `comments` (
+  `comment_id` int(11) NOT NULL AUTO_INCREMENT,
+  `content` varchar(255) DEFAULT NULL,
+  `user_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`comment_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
 
-User.prototype.getFullUser = function (userId, callback) {
-    _W("users", {}).findUserWithComments(userId, function (_userReturned) {
-        callback(_userReturned);
-    });
-};
+-- ----------------------------
+-- Records of comments
+-- ----------------------------
+INSERT INTO `comments` VALUES ('1', 'dsadsadsa', '18');
+INSERT INTO `comments` VALUES ('2', 'wqewqewqeq', '18');
+INSERT INTO `comments` VALUES ('3', 'cxxzczxczcz', '22');
+INSERT INTO `comments` VALUES ('4', 'e comment belongs to 23 usersa', '23');
 
+-- ----------------------------
+-- Table structure for comment_likes
+-- ----------------------------
+DROP TABLE IF EXISTS `comment_likes`;
+CREATE TABLE `comment_likes` (
+  `comment_like_id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `comment_id` int(11) DEFAULT NULL,
+  PRIMARY KEY (`comment_like_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8;
 
-module.exports = new User();
+-- ----------------------------
+-- Records of comment_likes
+-- ----------------------------
+INSERT INTO `comment_likes` VALUES ('1', '18', '1');
+INSERT INTO `comment_likes` VALUES ('3', '18', '2');
+INSERT INTO `comment_likes` VALUES ('4', '12', '1');
+INSERT INTO `comment_likes` VALUES ('5', '16', '3');
+INSERT INTO `comment_likes` VALUES ('6', '18', '4');
+INSERT INTO `comment_likes` VALUES ('7', '16', '4');
+INSERT INTO `comment_likes` VALUES ('8', '16', '3');
+INSERT INTO `comment_likes` VALUES ('9', '18', '3');
+
+-- ----------------------------
+-- Table structure for users
+-- ----------------------------
+DROP TABLE IF EXISTS `users`;
+CREATE TABLE `users` (
+  `user_id` int(11) NOT NULL AUTO_INCREMENT,
+  `mail` varchar(255) DEFAULT NULL,
+  `username` varchar(255) DEFAULT NULL,
+  `password` varchar(255) DEFAULT NULL,
+  `created_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  `years_old` int(11) DEFAULT '0',
+  PRIMARY KEY (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5624 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of users
+-- ----------------------------
+INSERT INTO `users` VALUES ('16', 'an updated username for user_id 30  or 30 2nd time', 'an updated x username 1nd time', 'ewqeq', '2015-08-09 03:55:34', '21');
+INSERT INTO `users` VALUES ('18', 'an updated mail for user id 18 2nd time', 'an updated username for user_id 18 3rd time', 'a pass', '2015-08-08 22:58:49', '55');
+INSERT INTO `users` VALUES ('19', 'updated19@omakis.com', 'an 19 username', 'a pass', '2015-08-08 22:38:19', '22');
+INSERT INTO `users` VALUES ('20', 'mail20_updated@omakis.com', 'an updated20 username', 'a pass', '2015-08-08 22:58:48', '15');
+INSERT INTO `users` VALUES ('22', 'mail22@omakis.com', 'a username', 'a passing', '2015-08-08 22:38:13', '22');
+INSERT INTO `users` VALUES ('23', 'mailwtf@dsadsa.com', 'a username', 'pass', '2015-08-08 22:38:16', '22');
+INSERT INTO `users` VALUES ('28', 'an updated username for user_id 28  or 283rd time', 'an updated x username 2nd time', 'ewqewq', '2015-08-08 22:58:44', '15');
+INSERT INTO `users` VALUES ('31', 'an updated username for user_id 31  or 31 2nd time', 'an updated x username 1nd time', 'dsadsada', '2015-08-09 03:55:32', '0');
+INSERT INTO `users` VALUES ('5618', 'special@email.com', 'a special username', null, '2015-08-13 06:32:07', '23');
+
+-- ----------------------------
+-- Table structure for user_infos
+-- ----------------------------
+DROP TABLE IF EXISTS `user_infos`;
+CREATE TABLE `user_infos` (
+  `user_info_id` int(11) NOT NULL AUTO_INCREMENT,
+  `user_id` int(11) DEFAULT NULL,
+  `hometown` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`user_info_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of user_infos
+-- ----------------------------
+INSERT INTO `user_infos` VALUES ('1', '18', 'athens');
+INSERT INTO `user_infos` VALUES ('3', '22', '22 user hometown');
+INSERT INTO `user_infos` VALUES ('4', '23', '23 user hometown');
 
 ```
 
-## Look at the Examples folder for the full source code.
 
 
-### [GPL-3.0 Licensed](LICENSE)
+## Todo
 
-[downloads-url]: https://www.npmjs.com/package/node-mysql-wrapper
+*  yield support
+
+[npm-image]: https://img.shields.io/npm/v/node-mysql-wrapper.svg
+[npm-url]: https://npmjs.org/package/node-mysql-wrapper
+[node-version-image]: http://img.shields.io/node/v/mysql.svg
+[node-version-url]: http://nodejs.org/download/
+[travis-image]: https://img.shields.io/travis/kataras/node-mysql-wrapper/master.svg?label=linux
+[downloads-url]: https://npmjs.org/package/node-mysql-wrapper

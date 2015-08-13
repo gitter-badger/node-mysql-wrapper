@@ -1,20 +1,25 @@
 var _mysqlConMod = require('./lib/mysql-connection');
-var mysqlWrapper = require('./lib/mysql-wrapper.js');
-var mysqlTableClass = require('./lib/mysql-table.js');
-var mysqlModelClass = require('./lib/mysql-model.js');
-module.exports = function (mysqlUrlOrObjectOrMysqlAlreadyConnection, isThisTheOnlyOneConnection, useGlobals) {
-    //isThisTheOnlyOneConnection default = true
-    //useGlobals default = true  
-    module.exports.MySQLTable = mysqlTableClass;
-    module.exports.MySQLModel = mysqlModelClass;
-    module.exports.MySQLWrapper = mysqlWrapper;
+var mysqlWrapperMod = require('./lib/mysql-wrapper.js');
+if (Function.prototype.name === undefined) {
+    //works only for function something() {}; no for var something = function(){}
+    // Add a custom property to all function values
+    // that actually invokes a method to get the value
+    Object.defineProperty(Function.prototype, 'name', {
+        get: function () {
+            return /function ([^(]*)/.exec(this + "")[1];
+        }
+    });
+}
 
-    if (useGlobals || useGlobals === undefined) {
-        global.MySQLTable = mysqlTableClass;
-        global.MySQLModel = mysqlModelClass;
-        global._W = mysqlWrapper; 
+module.exports = function (mysqlUrlOrObjectOrMysqlAlreadyConnection) {
+    var mysqlCon = new _mysqlConMod(mysqlUrlOrObjectOrMysqlAlreadyConnection);
+    var mysqlWrapper = new mysqlWrapperMod(mysqlCon);
+    if (arguments.length > 1) {
+        var args = [].slice.call(arguments);
+        args.shift();
+        mysqlWrapper.useOnly(args);
     }
- 
-    return new _mysqlConMod(mysqlUrlOrObjectOrMysqlAlreadyConnection, isThisTheOnlyOneConnection || true);
+
+    return mysqlWrapper;
 };
 

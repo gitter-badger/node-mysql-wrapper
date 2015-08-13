@@ -1,17 +1,3 @@
-/*
-Navicat MySQL Data Transfer
-
-Source Server         : Local Server
-Source Server Version : 50626
-Source Host           : localhost:3306
-Source Database       : taglub
-
-Target Server Type    : MYSQL
-Target Server Version : 50626
-File Encoding         : 65001
-
-Date: 2015-08-08 22:59:01
-*/
 
 SET FOREIGN_KEY_CHECKS=0;
 
@@ -69,19 +55,22 @@ CREATE TABLE `users` (
   `created_date` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `years_old` int(11) DEFAULT '0',
   PRIMARY KEY (`user_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8;
+) ENGINE=InnoDB AUTO_INCREMENT=5624 DEFAULT CHARSET=utf8;
 
 -- ----------------------------
 -- Records of users
 -- ----------------------------
-INSERT INTO `users` VALUES ('16', 'dsadadsa 16', 'dsasdadsadsa 16', 'ewqew', '2015-08-08 22:58:42', '22');
+INSERT INTO `users` VALUES ('16', 'an updated username for user_id 30  or 30 2nd time', 'an updated x username 1nd time', 'ewqeq', '2015-08-09 03:55:34', '21');
 INSERT INTO `users` VALUES ('18', 'an updated mail for user id 18 2nd time', 'an updated username for user_id 18 3rd time', 'a pass', '2015-08-08 22:58:49', '55');
 INSERT INTO `users` VALUES ('19', 'updated19@omakis.com', 'an 19 username', 'a pass', '2015-08-08 22:38:19', '22');
 INSERT INTO `users` VALUES ('20', 'mail20_updated@omakis.com', 'an updated20 username', 'a pass', '2015-08-08 22:58:48', '15');
 INSERT INTO `users` VALUES ('22', 'mail22@omakis.com', 'a username', 'a passing', '2015-08-08 22:38:13', '22');
 INSERT INTO `users` VALUES ('23', 'mailwtf@dsadsa.com', 'a username', 'pass', '2015-08-08 22:38:16', '22');
 INSERT INTO `users` VALUES ('28', 'an updated username for user_id 28  or 283rd time', 'an updated x username 2nd time', 'ewqewq', '2015-08-08 22:58:44', '15');
-INSERT INTO `users` VALUES ('30', 'an updated username for user_id 30  or 30 2nd time', 'an updated x username 1nd time', 'ewqeq', '2015-08-08 22:58:42', '21');
+INSERT INTO `users` VALUES ('31', 'an updated username for user_id 31  or 31 2nd time', 'an updated x username 1nd time', 'dsadsada', '2015-08-09 03:55:32', '0');
+INSERT INTO `users` VALUES ('5618', 'special@email.com', 'a special username', null, '2015-08-13 06:32:07', '23');
+INSERT INTO `users` VALUES ('5620', 'special@email.com', 'a special username', null, '2015-08-13 06:32:27', '23');
+INSERT INTO `users` VALUES ('5623', 'special@email.com', 'a special username', null, '2015-08-13 06:34:51', '23');
 
 -- ----------------------------
 -- Table structure for user_infos
