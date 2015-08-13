@@ -2,7 +2,7 @@
 
 This is a node js module which manages mysql (node-mysql) connection and models with a way that you are expecting! 
 
-## UPDATE 13-08-2015. Next upcoming version changes a lot of these you will see next, I done with the new code and I'm writing a -well documented how to use- wiki . When I finish it I will publish the 1.1 version with new examples also, please be pattient 2-3 days max!
+## UPDATE 13 August 2015. Next upcoming version changes a lot of these you will see next, I done with the new code and I'm writing a -well documented how to use- wiki . When I finish it I will publish the 1.1 version with new examples also, please be pattient 2-3 days max!
 ## Installation
 
 ```sh
