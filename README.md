@@ -192,14 +192,21 @@ If you don't pass a callback inside method  it returns a promise. Which you can 
  
 Column keys are auto converted to object properties, this means that user_id column on database table will be available as userId, same for table names too.
 
-**Simple find method** by 'user_id', find method always returns an array.
+**Simple 'find by' method** by 'user_id', find method always returns an array.
 ```js
 db.users.find({userId:18},function(results){
 	console.dir(results[0]);
 });
 ```
 
-**An advanced  find method**. Find all users where years_old = 22, find the user's info, find user's comments, the comment's likes and users who liked them.
+**Simple 'find all' method** , which is the same as db.tablename.find({},callback);
+```js
+db.users.findAll(function(results){ 
+	console.dir(results[0]);
+});
+```
+
+**An 'advanced  find' method**. Find all users where years_old = 22, find the user's info, find user's comments, the comment's likes and users who liked them.
 ```js
 var criteria= {
 	yearsOld:22,
@@ -223,7 +230,7 @@ db.users.find(criteria,function(results){
 });
 ```
 
-**Save method**  Returns a single object, also updates the variable you pass into.
+**Save method**,  Returns a single object, also updates the variable you pass into.
 ```js
 
 var newUser = { username: 'a new user', yearsOld: 23, mail: 'newmail@mail.com' };
