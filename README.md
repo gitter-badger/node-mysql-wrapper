@@ -470,7 +470,6 @@ INSERT INTO `user_infos` VALUES ('4', '23', '23 user hometown');
 
 
 ## Todo
-*  convert the whole project source to typescript 
 *  yield support
 
 [npm-image]: https://img.shields.io/npm/v/node-mysql-wrapper.svg
