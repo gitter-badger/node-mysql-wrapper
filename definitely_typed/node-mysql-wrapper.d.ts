@@ -59,11 +59,7 @@ declare module "node-mysql-wrapper" {
         on(evtType: EVENT_TYPES | string, callback: (parsedResults: Object[]) => void): void;
         unwatch(evtType: EVENT_TYPES|string, callbackToRemove: () => void): void;
         off(evtType: EVENT_TYPES|string, callbackToRemove: () => void): void;
-<<<<<<< HEAD
 
-=======
-        
->>>>>>> origin/master
         ///START DYNAMIC METHODS FOR TABLES CANNOT BE PRE-DEFINED WITH DYNAMIC WAY, YET, SO:
         find<U>(jsObject: Object, callback?: (results: Object[]) => void): Promise<U>;
         save<U>(jsObject: Object, callback?: (results: Object[]) => void): Promise<U>;
@@ -102,7 +98,7 @@ declare module "node-mysql-wrapper" {
         remove<U>(): Promise<U>;
         delete<U>(): Promise<U>;
 
-    }
+    } 
 
     interface MySQLWrapper {
         new (connection?: MySQLConnection): MySQLWrapper;
@@ -131,10 +127,4 @@ declare module "node-mysql-wrapper" {
     }
 
     export = MySQLWrapperBuilder;
-<<<<<<< HEAD
 }
-=======
-
-
-}
->>>>>>> origin/master
