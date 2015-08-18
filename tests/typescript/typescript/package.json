@@ -1,0 +1,13 @@
+{
+  "name": "typescriptnodejstests",
+  "version": "0.0.0",
+  "description": "typescriptnodejstests",
+  "main": "app.js",
+  "author": {
+    "name": "Makis-PC",
+    "email": ""
+  },
+  "dependencies": {
+    "reflect-metadata": "^0.1.0"
+  }
+}

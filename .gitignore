@@ -4,3 +4,7 @@ obj
 .settings
 node-mysql-wrapper.njsproj
 .ntvs_analysis.dat
+/tests/typescript/.vs
+/tests/*.dll
+/tests/*/*.sln
+/bin/*.dll

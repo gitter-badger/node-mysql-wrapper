@@ -3,8 +3,7 @@
 // Definitions by: Makis Maropoulos <https://github.com/kataras>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 
-///<reference path='./mysql.d.ts' />
-///<reference path='./bluebird.d.ts' />
+///<reference path='../mysql/mysql.d.ts' />
 
 declare module "node-mysql-wrapper" {
     import Mysql = require("mysql");
@@ -16,10 +15,10 @@ declare module "node-mysql-wrapper" {
     }
 
     interface MySQLConnection {
-        constructor(connection: string | Mysql.IConnection);
+        new (connection: string | Mysql.IConnection): MySQLConnection;
 
-        create(connectionUri: string);
-        create(connection: Mysql.IConnection);
+        create(connectionUri: string): void;
+        create(connection: Mysql.IConnection): void;
 
         attach(connection: Mysql.IConnection): void;
         end(callback: () => void): void;
@@ -32,8 +31,8 @@ declare module "node-mysql-wrapper" {
         fetchDatabaseInfornation<U>(): Promise<U>;
 
         escape(val: string): string;
-        notice(tableWhichCalled: string, queryStr: string, parsedResults: Object[]);
-        fireEvent(tableWhichCalled: string, queryStr: string, parsedResults: Object[]);
+        notice(tableWhichCalled: string, queryStr: string, parsedResults: Object[]): void;
+        fireEvent(tableWhichCalled: string, queryStr: string, parsedResults: Object[]): void;
 
         watch(tableName: string, evtType: EVENT_TYPES | string, callback: (parsedResults: Object[]) => void): void;
         on(tableName: string, evtType: EVENT_TYPES | string, callback: (parsedResults: Object[]) => void): void;
@@ -46,39 +45,39 @@ declare module "node-mysql-wrapper" {
     }
 
     interface MySQLTable {
-        constructor(tableName: string, connection: MySQLConnection);
+        new (tableName: string, connection: MySQLConnection): MySQLTable;
 
-        setColumns(columns: string[]);
+        setColumns(columns: string[]): void;
 
-        setPrimaryKey(primaryKeyColumnName: string);
+        setPrimaryKey(primaryKeyColumnName: string): void;
 
         toString(): string;
 
         model(jsObject: Object): MySQLModel;
 
-        watch(evtType: EVENT_TYPES | string, callback: (parsedResults: Object[]) => void);
-        on(evtType: EVENT_TYPES | string, callback: (parsedResults: Object[]) => void);
-        unwatch(evtType: EVENT_TYPES|string, callbackToRemove: () => void);
-        off(evtType: EVENT_TYPES|string, callbackToRemove: () => void);
-        
+        watch(evtType: EVENT_TYPES | string, callback: (parsedResults: Object[]) => void): void;
+        on(evtType: EVENT_TYPES | string, callback: (parsedResults: Object[]) => void): void;
+        unwatch(evtType: EVENT_TYPES|string, callbackToRemove: () => void): void;
+        off(evtType: EVENT_TYPES|string, callbackToRemove: () => void): void;
+
         ///START DYNAMIC METHODS FOR TABLES CANNOT BE PRE-DEFINED WITH DYNAMIC WAY, YET, SO:
         find<U>(jsObject: Object, callback?: (results: Object[]) => void): Promise<U>;
         save<U>(jsObject: Object, callback?: (results: Object[]) => void): Promise<U>;
         remove<U>(jsObject: Object, callback?: (results: Object[]) => void): Promise<U>;
         delete<U>(jsObject: Object, callback?: (results: Object[]) => void): Promise<U>;
         safeDelete<U>(jsObject: Object, callback?: (results: Object[]) => void): Promise<U>;
-        ///END 
+        ///END
         findAll<U>(callback?: (results: Object[]) => void): Promise<U>;
 
-        extend(functionName: string, functionToBeSupported: () => any);
+        extend(functionName: string, functionToBeSupported: () => any): void;
 
-        has(extendedFunctionName: string);
+        has(extendedFunctionName: string): boolean;
 
     }
 
     interface MySQLModel {
 
-        constructor(table: MySQLTable, jsObject: Object);
+        new (table: MySQLTable, jsObject: Object): MySQLModel;
 
         toObjectProperty(columnKey: string): string;
         toRowProperty(objectKey: string): string;
@@ -89,8 +88,8 @@ declare module "node-mysql-wrapper" {
         toRow(): void;
         getRawObject(): Object;
 
-        parseTable(mysqlTableToSearch: String, parentObject: Object);
-        parseResult(result: Object, tablesToSearch: string[]);
+        parseTable<U>(mysqlTableToSearch: String, parentObject: Object): Promise<U>;
+        parseResult<U>(result: Object, tablesToSearch: string[]): Promise<U>;
 
         find<U>(parentObj?: Object): Promise<U>;
         findAll<U>(): Promise<U>;
@@ -102,7 +101,7 @@ declare module "node-mysql-wrapper" {
     }
 
     interface MySQLWrapper {
-        constructor(connection?: MySQLConnection);
+        new (connection?: MySQLConnection): MySQLWrapper;
 
         setConnection(connection: MySQLConnection): void;
 
@@ -128,6 +127,4 @@ declare module "node-mysql-wrapper" {
     }
 
     export = MySQLWrapperBuilder;
-
-
 }
