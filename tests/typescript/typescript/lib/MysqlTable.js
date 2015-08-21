@@ -1,3 +1,4 @@
+var Promise = require('bluebird');
 exports.EQUAL_TO_PROPERTY_SYMBOL = '=';
 var MysqlTable = (function () {
     function MysqlTable(tableName, connection) {
@@ -49,20 +50,21 @@ var MysqlTable = (function () {
         }
     };
     MysqlTable.prototype.toRow = function (jsObject) {
-        var arr = new Array();
-        var columns = [];
-        var values = [];
-        for (var key in jsObject) {
+        var _arr = new Array();
+        var _columns = [];
+        var _values = [];
+        for (var _i = 0; _i < jsObject.length; _i++) {
+            var key = jsObject[_i];
             var _col = MysqlTable.toRowProperty(key);
             //only if this key/property of object is actualy a column (except  primary key)
             if (this.columns.indexOf(_col) !== -1) {
-                columns.push(_col);
-                values.push(jsObject[key]);
+                _columns.push(_col);
+                _values.push(jsObject[key]);
             }
         }
-        arr.push(columns);
-        arr.push(values);
-        return arr;
+        _arr.push(_columns);
+        _arr.push(_values);
+        return _arr;
     };
     MysqlTable.prototype.getPrimaryKeyValue = function (jsObject) {
         var returnValue = 0;
@@ -127,7 +129,7 @@ var MysqlTable = (function () {
         }
         return def.promise;
     };
-    MysqlTable.prototype.find = function (jsObject) {
+    MysqlTable.prototype.find = function (jsObject, callback) {
         var _this = this;
         var def = Promise.defer();
         var colsToSearch = [];
@@ -175,8 +177,8 @@ var MysqlTable = (function () {
         });
         return def.promise;
     };
-    MysqlTable.prototype.findAll = function () { return this.find({}); };
-    MysqlTable.prototype.save = function (jsObject) {
+    MysqlTable.prototype.findAll = function (callback) { return this.find({}, callback); };
+    MysqlTable.prototype.save = function (jsObject, callback) {
         var _this = this;
         //sta arguments borw na perniounte ta values me tin seira, ton properties pou exei to model-jsObject 
         var def = Promise.defer();
@@ -201,6 +203,9 @@ var MysqlTable = (function () {
                 }
                 _this.connection.notice(_this.name, _query, jsObject);
                 def.resolve(jsObject);
+                if (callback) {
+                    callback(jsObject); //an kai kanonika auto to kanei mono t
+                }
             });
         }
         else {
@@ -217,11 +222,14 @@ var MysqlTable = (function () {
                 primaryKeyValue = result.insertId;
                 _this.connection.notice(_this.name, _query, jsObject);
                 def.resolve(jsObject);
+                if (callback) {
+                    callback(jsObject);
+                }
             }, [this.name, objectColumns, objectValues]);
         }
         return def.promise;
     };
-    MysqlTable.prototype.safeRemove = function (jsObject) {
+    MysqlTable.prototype.safeRemove = function (jsObject, callback) {
         var _this = this;
         var def = Promise.defer();
         var primaryKeyValue = this.getPrimaryKeyValue(jsObject);
@@ -237,10 +245,13 @@ var MysqlTable = (function () {
             jsObject.affectedRows = result.affectedRows;
             _this.connection.notice(_this.name, _query, jsObject);
             def.resolve(jsObject);
+            if (callback) {
+                callback(jsObject); //an kai kanonika auto to kanei mono t
+            }
         });
         return def.promise;
     };
-    MysqlTable.prototype.remove = function (jsObject) {
+    MysqlTable.prototype.remove = function (jsObject, callback) {
         var _this = this;
         var def = Promise.defer();
         var primaryKeyValue = this.getPrimaryKeyValue(jsObject);
@@ -263,6 +274,9 @@ var MysqlTable = (function () {
                 jsObject.affectedRows = result.affectedRows;
                 _this.connection.notice(_this.name, _query, jsObject);
                 def.resolve(jsObject);
+                if (callback) {
+                    callback(jsObject); //an kai kanonika auto to kanei mono t
+                }
             });
         }
         else {

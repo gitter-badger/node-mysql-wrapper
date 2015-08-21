@@ -3,8 +3,7 @@
 var Mysql = require('mysql');
 var Util = require('util');
 var Promise = require('bluebird');
-var EventModule = require('events');
-var EventEmitter = EventModule.EventEmitter;
+var events_1 = require('events');
 var MysqlTable_1 = require("MysqlTable");
 /* prostoparwn den xrisimopoiounte , akoma tlxstn
 export enum EventTypes {
@@ -17,7 +16,7 @@ var MysqlConnection = (function () {
         this.tableNamesToUseOnly = [];
         this.tables = [];
         this.create(connection);
-        Util.inherits(this, EventEmitter);
+        Util.inherits(this, events_1.EventEmitter);
     }
     MysqlConnection.prototype.create = function (connection) {
         if (typeof connection === "string") {
@@ -161,8 +160,6 @@ var MysqlConnection = (function () {
         }
     };
     MysqlConnection.prototype.query = function (queryStr, callback, queryArguments) {
-        var args = Array.prototype.slice.call(arguments);
-        queryStr = args[0];
         if (queryArguments) {
             this.connection.query(queryStr, queryArguments, function (err, results) {
                 callback(err, results);

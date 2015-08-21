@@ -1,4 +1,6 @@
-﻿import {MysqlConnection, EventTypes} from "MysqlConnection";
+﻿//import {MysqlConnection, EventTypes} from "MysqlConnection";
+import {MysqlConnection} from "MysqlConnection";
+import * as Promise from 'bluebird';
 export var EQUAL_TO_PROPERTY_SYMBOL = '=';
 
 export class MysqlTable {
@@ -24,8 +26,6 @@ export class MysqlTable {
         return objectKey.replace(/([A-Z]+)/g, "_$1").replace(/^_/, "").toLowerCase();
     }
 
-
-
     set columns(cols: string[]) {
         this._columns = cols;
     }
@@ -43,11 +43,11 @@ export class MysqlTable {
     }
 
 
-    on(evtType: EventTypes, callback: (parsedResults: any[]) => void): void {
+    on(evtType: string, callback: (parsedResults: any[]) => void): void {
         this.connection.watch(this.name, evtType, callback);
     }
 
-    off(evtType: EventTypes, callbackToRemove: (parsedResults: any[]) => void): void {
+    off(evtType: string, callbackToRemove: (parsedResults: any[]) => void): void {
         this.connection.unwatch(this.name, evtType, callbackToRemove);
     }
 
@@ -65,27 +65,27 @@ export class MysqlTable {
     }
 
     toRow(jsObject: any): Array<any> {
-        let arr = new Array();
-        let columns = [];
-        let values = [];
+        let _arr = new Array();
+        let _columns = [];
+        let _values = [];
 
-        for (let key in jsObject) {
+        for (let key of jsObject) {
             let _col = MysqlTable.toRowProperty(key);
             //only if this key/property of object is actualy a column (except  primary key)
         
             if (this.columns.indexOf(_col) !== -1) {
 
-                columns.push(_col);
-                values.push(jsObject[key]);
+                _columns.push(_col);
+                _values.push(jsObject[key]);
 
             }
 
         }
 
-        arr.push(columns);
-        arr.push(values);
+        _arr.push(_columns);
+        _arr.push(_values);
 
-        return arr;
+        return _arr;
 
     }
 
@@ -161,7 +161,7 @@ export class MysqlTable {
         return def.promise;
     }
 
-    find(jsObject: any): Promise<any> {
+    find(jsObject: any, callback?: (_results: any[]) => any): Promise<any> {
         let def = Promise.defer();
 
 
@@ -219,9 +219,9 @@ export class MysqlTable {
         return def.promise;
     }
 
-    findAll(): Promise<any> { return this.find({}); }
+    findAll(callback?:(_results:any[])=>any): Promise<any> { return this.find({},callback); }
 
-    save(jsObject: any): Promise<any> {
+    save(jsObject: any, callback?: (_result: any) => any): Promise<any> {
         //sta arguments borw na perniounte ta values me tin seira, ton properties pou exei to model-jsObject 
         let def = Promise.defer();
         let primaryKeyValue = this.getPrimaryKeyValue(jsObject);
@@ -248,6 +248,9 @@ export class MysqlTable {
                 }
                 this.connection.notice(this.name, _query, jsObject);
                 def.resolve(jsObject);
+                if (callback) {
+                    callback(jsObject);  //an kai kanonika auto to kanei mono t
+                }
             });
 
         } else {
@@ -263,13 +266,17 @@ export class MysqlTable {
 
                 this.connection.notice(this.name, _query, jsObject);
                 def.resolve(jsObject);
+                if (callback) {
+                    callback(jsObject);
+                }
+             
 
             }, [this.name, objectColumns, objectValues]);
         }
         return def.promise;
     }
 
-    safeRemove(jsObject: any): Promise<any> {
+    safeRemove(jsObject: any, callback?: (_result: any) => any): Promise<any> {
         let def = Promise.defer();
 
         let primaryKeyValue = this.getPrimaryKeyValue(jsObject);
@@ -286,12 +293,15 @@ export class MysqlTable {
             jsObject.affectedRows = result.affectedRows;
             this.connection.notice(this.name, _query, jsObject);
             def.resolve(jsObject);
+            if (callback) {
+                callback(jsObject);  //an kai kanonika auto to kanei mono t
+            }
         });
 
         return def.promise;
     }
 
-    remove(jsObject: any): Promise<any> {
+    remove(jsObject: any, callback?: (_result: any) => any): Promise<any> {
         let def = Promise.defer();
         let primaryKeyValue = this.getPrimaryKeyValue(jsObject);
         if (!primaryKeyValue || primaryKeyValue <= 0) {
@@ -314,6 +324,9 @@ export class MysqlTable {
                 jsObject.affectedRows = result.affectedRows;
                 this.connection.notice(this.name, _query, jsObject);
                 def.resolve(jsObject);
+                if (callback) {
+                    callback(jsObject);  //an kai kanonika auto to kanei mono t
+                }
             });
         } else {
             return this.safeRemove(jsObject);

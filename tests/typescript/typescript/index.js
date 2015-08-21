@@ -48,6 +48,7 @@ userTable.find(userToFind,()=>{  //or promise
   //or: user userToFind = await userTable.find({userId:18});
 });
 */
+var _this = this;
 /*
 already supported:
 
@@ -65,4 +66,29 @@ Destructuring
 var {name, browserStatus:{opera}} = topic;  //name: 'ECMAScript 6', opera: 'partial
 
 */
+var MysqlConnection_1 = require("./lib/MysqlConnection");
+var MysqlWrapper_1 = require("./lib/MysqlWrapper");
+if (Function.prototype["name"] === undefined) {
+    //works only for function something() {}; no for var something = function(){}
+    // Add a custom property to all function values
+    // that actually invokes a method to get the value
+    Object.defineProperty(Function.prototype, 'name', {
+        get: function () {
+            return /function ([^(]*)/.exec(_this + "")[1];
+        }
+    });
+}
+function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection) {
+    var useTables = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        useTables[_i - 1] = arguments[_i];
+    }
+    var mysqlCon = new MysqlConnection_1.MysqlConnection(mysqlUrlOrObjectOrMysqlAlreadyConnection);
+    var mysqlWrapper = new MysqlWrapper_1.MysqlWrapper(mysqlCon);
+    if (useTables) {
+        mysqlWrapper.useOnly(useTables);
+    }
+    return mysqlWrapper;
+}
+exports.wrap = wrap;
 //# sourceMappingURL=index.js.map

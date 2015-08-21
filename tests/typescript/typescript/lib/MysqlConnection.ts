@@ -1,11 +1,10 @@
 ﻿/// <reference path="./../Scripts/typings/mysql/mysql.d.ts"/>
 /// <reference path="./../Scripts/typings/bluebird/bluebird.d.ts"/> 
 
-import Mysql = require('mysql');
-import Util = require('util');
-import Promise = require('bluebird');
-import EventModule = require('events');
-import EventEmitter = EventModule.EventEmitter;
+import  * as Mysql from 'mysql';
+import * as Util from 'util';
+import * as Promise from 'bluebird';
+import {EventEmitter} from 'events';
 
 import {MysqlTable} from "MysqlTable";
 /* prostoparwn den xrisimopoiounte , akoma tlxstn
@@ -190,18 +189,15 @@ export class MysqlConnection {
     }
 
     query(queryStr: string, callback: (err: Mysql.IError, results: any) => any, queryArguments?: any[]): void {
-   
-        var args = Array.prototype.slice.call(arguments);
-        queryStr = args[0];
 
         if (queryArguments) {         
                                     
-            this.connection.query(queryStr, queryArguments, function (err, results) {
+            this.connection.query(queryStr, queryArguments, (err, results)=> {
                 callback(err, results);
             });
         } else {        //means only: queryStr and the callback
           
-            this.connection.query(queryStr, function (err, results) {
+            this.connection.query(queryStr,  (err, results)=> {
                 callback(err, results);
             }); 
         } 
@@ -209,7 +205,6 @@ export class MysqlConnection {
 
     table(tableName: string): MysqlTable {
         for (let i = 0; i < this.tables.length; i++) {
-
             if (this.tables[i].name === tableName) {
 
                 return this.tables[i];
