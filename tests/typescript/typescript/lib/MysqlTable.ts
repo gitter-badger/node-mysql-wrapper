@@ -109,7 +109,7 @@ export class MysqlTable {
         return returnValue;
     }
 
-    putTablePropertyFrom(mysqlTableToSearch: string, parentObj: any): Promise<any> {
+    putTablePropertyFrom(mysqlTableToSearch: string, parentObj: any): Promise<void> {
         let def = Promise.defer();
         let tableProperty = MysqlTable.toObjectProperty(mysqlTableToSearch);
         let tablePropertyObj = parentObj[tableProperty];
@@ -126,7 +126,7 @@ export class MysqlTable {
             def.resolve();
         });
 
-        return def.promise;
+        return <any>def.promise;
     }
 
     parseQueryResult(jsObject: any, result: any, tablesToSearch: string[]): Promise<any> {
