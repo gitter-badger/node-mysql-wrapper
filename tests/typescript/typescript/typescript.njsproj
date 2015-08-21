@@ -22,27 +22,33 @@
     <ProjectTypeGuids>{3AF33F2E-1136-4D97-BBB7-1795711AC8B8};{9092AA53-FB77-4645-B42D-1CCCA6BD08BD}</ProjectTypeGuids>
     <ProjectView>ShowAllFiles</ProjectView>
     <TypeScriptSourceMap>true</TypeScriptSourceMap>
-	<TypeScriptExperimentalDecorators>true</TypeScriptExperimentalDecorators>
+    <TypeScriptExperimentalDecorators>true</TypeScriptExperimentalDecorators>
     <TypeScriptModuleKind>CommonJS</TypeScriptModuleKind>
     <EnableTypeScript>true</EnableTypeScript>
     <StartWebBrowser>False</StartWebBrowser>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
     <DebugSymbols>true</DebugSymbols>
-	<TypeScriptExperimentalDecorators>True</TypeScriptExperimentalDecorators> <!--edw benei coble-->
+    <TypeScriptExperimentalDecorators>True</TypeScriptExperimentalDecorators>
+    <!--edw benei coble-->
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <DebugSymbols>true</DebugSymbols>
-	<TypeScriptExperimentalDecorators>True</TypeScriptExperimentalDecorators><!--edw benei coble-->
+    <TypeScriptExperimentalDecorators>True</TypeScriptExperimentalDecorators>
+    <!--edw benei coble-->
   </PropertyGroup>
   <ItemGroup>
     <TypeScriptCompile Include="app.ts" />
     <Content Include="package.json" />
     <Content Include="README.md" />
-    <TypeScriptCompile Include="MysqlDatabase.ts" />
+    <TypeScriptCompile Include="index.ts" />
+    <TypeScriptCompile Include="lib\MysqlConnection.ts" />
+    <TypeScriptCompile Include="lib\MysqlTable.ts" />
+    <TypeScriptCompile Include="lib\MysqlWrapper.ts" />
     <TypeScriptCompile Include="Scripts\typings\node\node.d.ts" />
   </ItemGroup>
   <ItemGroup>
+    <Folder Include="lib\" />
     <Folder Include="Scripts\" />
     <Folder Include="Scripts\typings\" />
     <Folder Include="Scripts\typings\node\" />
@@ -52,14 +58,17 @@
     <TypeScriptTarget>ES6</TypeScriptTarget>
     <TypeScriptCompileOnSaveEnabled>True</TypeScriptCompileOnSaveEnabled>
     <TypeScriptNoImplicitAny>False</TypeScriptNoImplicitAny>
-    <TypeScriptRemoveComments>False</TypeScriptRemoveComments>
-    <TypeScriptOutFile />
+    <TypeScriptRemoveComments>True</TypeScriptRemoveComments>
+    <TypeScriptOutFile>
+    </TypeScriptOutFile>
     <TypeScriptOutDir />
     <TypeScriptGeneratesDeclarations>True</TypeScriptGeneratesDeclarations>
     <TypeScriptNoEmitOnError>True</TypeScriptNoEmitOnError>
     <TypeScriptMapRoot />
     <TypeScriptSourceRoot />
-	<TypeScriptExperimentalDecorators>True</TypeScriptExperimentalDecorators>
+    <TypeScriptExperimentalDecorators>True</TypeScriptExperimentalDecorators>
+    <TypeScriptModuleKind>CommonJS</TypeScriptModuleKind>
+    <TypeScriptSourceMap>False</TypeScriptSourceMap>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\TypeScript\Microsoft.TypeScript.targets" Condition="False" />
   <Import Project="$(VSToolsPath)\Node.js Tools\Microsoft.NodejsTools.targets" />

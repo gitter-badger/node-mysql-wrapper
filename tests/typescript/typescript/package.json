@@ -8,6 +8,8 @@
     "email": ""
   },
   "dependencies": {
+    "bluebird": "^2.9.34",
+    "mysql": "^2.8.0",
     "reflect-metadata": "^0.1.0"
   }
 }
