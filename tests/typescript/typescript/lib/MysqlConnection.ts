@@ -1,19 +1,19 @@
 ﻿/// <reference path="./../Scripts/typings/mysql/mysql.d.ts"/>
 /// <reference path="./../Scripts/typings/bluebird/bluebird.d.ts"/> 
-
-import  * as Mysql from 'mysql';
+/// <reference path="./MysqlTable.ts"/> 
+import * as Mysql from 'mysql';
 import * as Util from 'util';
 import * as Promise from 'bluebird';
 import {EventEmitter} from 'events';
 
-import {MysqlTable} from "MysqlTable";
+import MysqlTable from "./MysqlTable";
 /* prostoparwn den xrisimopoiounte , akoma tlxstn
 export enum EventTypes {
     Insert, Update, Remove, Save
 
 }*/
 
-export class MysqlConnection {
+class MysqlConnection {
     connection: Mysql.IConnection;
     eventTypes = ["INSERT", "UPDATE", "REMOVE", "SAVE"];
     tableNamesToUseOnly = [];
@@ -25,7 +25,7 @@ export class MysqlConnection {
     }
 
     create(connection: string | Mysql.IConnection): void {
-        if (typeof connection === "string") {
+        if (typeof connection === "string" || connection instanceof String) {
             this.attach(Mysql.createConnection(connection));
 
         } else {   //means that is mysql already connection
@@ -53,7 +53,7 @@ export class MysqlConnection {
 
     link(readyCallback?: () => void): Promise<any> {
         let def = Promise.defer();
-        let callback = readyCallback() ||
+        let callback: Function = readyCallback ||
             ((err: any) => {
                 if (err) {
                     console.error('MYSQL: error connecting: ' + err.stack);
@@ -71,11 +71,13 @@ export class MysqlConnection {
             });
 
         // if (this.connection.state === 'authenticated') {
-        if (this.connection['state'] === 'authenticated') {
-            readyCallback();
-            def.resolve();
-        } else {
+        if (this.connection['state'] === 'disconnected' || this.connection['state'] === 'connecting') {
             this.connection.connect(callback);
+        } else {   //means this.connection['state'] === 'authenticated', so just callback and promise resolve.
+            callback();
+            def.resolve();
+
+
         }
 
         return def.promise;
@@ -100,42 +102,52 @@ export class MysqlConnection {
         //Ta kanw ola edw gia na doulepsei to def.resolve kai na einai etoimo olo to module molis ola ta tables kai ola ta columns dhlwthoun.
 
         let def = Promise.defer();
-        let self = this;
-
-        self.connection.query("SELECT DISTINCT TABLE_NAME ,column_name FROM INFORMATION_SCHEMA.key_column_usage WHERE TABLE_SCHEMA IN ('" + self.connection.config.database + "');", function (err, results) {
-
-            [].forEach.call(results, function (tableObj, currentPosition) {
-                if (self.tableNamesToUseOnly.length > 0 && self.tableNamesToUseOnly.indexOf(tableObj.TABLE_NAME) === -1) {
-                    //means that only to use called, and this table is not in this collection, so don't fetch it.
-                } else {
-                    let _table = new MysqlTable(tableObj.TABLE_NAME, self);
-                    _table.primaryKey = (tableObj.column_name);
-
-                    self.connection.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + self.connection.config.database + "' AND TABLE_NAME = '" + _table.name + "';", function (errC, resultsC) {
-                        let _tableColumns = [];
-
-                        for (let i = 0; i < resultsC.length; i++) {
-                            let _columnName = resultsC[i].COLUMN_NAME;
-                            if (_columnName !== _table.primaryKey) {
-                                _tableColumns.push(_columnName);
-                            }
-                        }
-
-                        _table.columns = (_tableColumns);
-                        self.tables.push(_table);
-
-                        if (currentPosition === results.length - 1) {
-                            //otan teleiwsoume me ola
-                        
-                            def.resolve();
-                        }
-
-                    });
+        //ta results pou 9eloume einai panta ta: results[0]. 
+        this.connection.query("SELECT DISTINCT TABLE_NAME ,column_name FROM INFORMATION_SCHEMA.key_column_usage WHERE TABLE_SCHEMA IN ('" + this.connection.config.database + "');",
+            (err: Mysql.IError, ...results: any[]) => {
+                if (err) {
+                    def.reject(err);
                 }
+                [].forEach.call(results[0], (tableObj, currentPosition) => {
+                    //.log(tableObj.TABLE_NAME);
+                    if (this.tableNamesToUseOnly.length > 0 && this.tableNamesToUseOnly.indexOf(tableObj.TABLE_NAME) !== -1) {
+                        //means that only to use called, and this table is not in this collection, so don't fetch it.
+                        
+                    } else {
+                        let _table = new MysqlTable(tableObj.TABLE_NAME, this);
+                        _table.primaryKey = (tableObj.column_name);
+
+                        this.connection.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + this.connection.config.database + "' AND TABLE_NAME = '" + _table.name + "';", (errC: Mysql.IError, ...resultsC: any[]) => {
+                            if (errC) {
+                                def.reject(err);
+                            }
+
+                            let _tableColumns = [];
+
+                            for (let i = 0; i < resultsC[0].length; i++) {
+
+                                let _columnName = resultsC[0][i]['COLUMN_NAME'];//.COLUMN_NAME
+                                if (_columnName !== _table.primaryKey) {
+                                    _tableColumns.push(_columnName);
+                                }
+                            }
+
+                            _table.columns = (_tableColumns);
+                            this.tables.push(_table);
+                            //console.log('pushing ' + _table.name + ' with primary: ' + _table.primaryKey + ' and columns: ');
+                            // console.dir(_table.columns);
+                            if (currentPosition === results[0].length - 1) {
+                                //otan teleiwsoume me ola
+                        
+                                def.resolve();
+                            }
+
+                        });
+                    }
+                });
+
+
             });
-
-
-        });
 
         return <any>(def.promise);
     }
@@ -190,17 +202,17 @@ export class MysqlConnection {
 
     query(queryStr: string, callback: (err: Mysql.IError, results: any) => any, queryArguments?: any[]): void {
 
-        if (queryArguments) {         
-                                    
-            this.connection.query(queryStr, queryArguments, (err, results)=> {
+        if (queryArguments) {
+
+            this.connection.query(queryStr, queryArguments, (err, results) => {
                 callback(err, results);
             });
         } else {        //means only: queryStr and the callback
           
-            this.connection.query(queryStr,  (err, results)=> {
+            this.connection.query(queryStr, (err, results) => {
                 callback(err, results);
-            }); 
-        } 
+            });
+        }
     }
 
     table(tableName: string): MysqlTable {
@@ -216,3 +228,4 @@ export class MysqlConnection {
 
 }
 
+export default MysqlConnection;

@@ -12,7 +12,9 @@ var db = wrapper.wrap("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset
 //db.useOnly/.useTables("users", "user_infos", ["comments", "comment_likes"]);// default is to use all tables., must be called before _W.ready().
 db.ready(function () {
     db.table("comments").findAll(function (results) {
+        console.log(' found ' + results.length + ' [all] comments ');
         console.dir(results);
+        console.log('-------------------------------------');
     });
     db.table("users").find({
         yearsOld: 22,
@@ -25,15 +27,20 @@ db.ready(function () {
             }
         }
     }, function (_results) {
+        console.dir(_results);
         [].forEach.call(_results, function (result) {
             console.dir(result);
-            console.log("=========COMMENTS from " + result.username + (result.userInfos.length > 0 ? " which hometown is " + result.userInfos[0].hometown : '') + " ======\n");
-            [].forEach.call(result.comments, function (comment) {
-                console.log(comment.content + " with " + comment.commentLikes.length + " likes!");
-                if (comment.commentLikes.length > 0)
-                    console.log('first like on this comment liked by: ' + comment.commentLikes[0].users[0].username);
-            });
-            console.log("===============\n\n");
+            /*
+                console.log("=========COMMENTS from " + result.username + (result.userInfos.length > 0 ? " which hometown is " + result.userInfos[0].hometown : '') + " ======\n");
+
+                [].forEach.call(result.comments, function (comment) {
+                    console.log(comment.content + " with " + comment.commentLikes.length + " likes!");
+
+                    if (comment.commentLikes.length > 0)
+                        console.log('first like on this comment liked by: ' + comment.commentLikes[0].users[0].username);
+                });
+
+                console.log("===============\n\n");      */
         });
     });
     if (db.table("users").has("mailExists") === false) {

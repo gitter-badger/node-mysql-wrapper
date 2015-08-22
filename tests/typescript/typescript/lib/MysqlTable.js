@@ -53,8 +53,8 @@ var MysqlTable = (function () {
         var _arr = new Array();
         var _columns = [];
         var _values = [];
-        for (var _i = 0; _i < jsObject.length; _i++) {
-            var key = jsObject[_i];
+        //'of' doesnt works for the properties.
+        for (var key in jsObject) {
             var _col = MysqlTable.toRowProperty(key);
             //only if this key/property of object is actualy a column (except  primary key)
             if (this.columns.indexOf(_col) !== -1) {
@@ -89,10 +89,10 @@ var MysqlTable = (function () {
         var def = Promise.defer();
         var tableProperty = MysqlTable.toObjectProperty(mysqlTableToSearch);
         var tablePropertyObj = parentObj[tableProperty];
-        for (var _i = 0; _i < tablePropertyObj.length; _i++) {
-            var key = tablePropertyObj[_i];
+        for (var key in tablePropertyObj) {
             var _val = tablePropertyObj[key];
             if (_val === exports.EQUAL_TO_PROPERTY_SYMBOL) {
+                // console.log(key + " is equal to " + parentObj[key]);
                 tablePropertyObj[key] = parentObj[key];
             }
         }
@@ -103,32 +103,38 @@ var MysqlTable = (function () {
         return def.promise;
     };
     MysqlTable.prototype.parseQueryResult = function (jsObject, result, tablesToSearch) {
+        var _this = this;
         var def = Promise.defer();
         var _obj = {};
-        var self = this;
-        for (var _i = 0; _i < result.length; _i++) {
-            var key = result[_i];
+        for (var key in result) {
             var propertyObjKey = MysqlTable.toObjectProperty(key);
             _obj[propertyObjKey] = result[key];
         }
         if (tablesToSearch.length === 0) {
+            // console.dir(_obj);
             def.resolve(_obj);
         }
         else {
+            // console.dir(_obj); //ews ewd kala paei
             var promisesList = [];
             [].forEach.call(tablesToSearch, function (tableToSearch) {
+                //apo edw kai pera den teleiwnei pote i fasi ....
                 var tableToSearchProp = MysqlTable.toObjectProperty(tableToSearch);
-                _obj = jsObject[tableToSearchProp] = jsObject[tableToSearchProp];
-                promisesList.push(self.putTablePropertyFrom(tableToSearch, _obj));
-                Promise.all(promisesList).then(function () {
-                    def.resolve(_obj);
-                }).error(function () {
-                    def.reject("Error when parsing the object from table.");
-                });
+                _obj[tableToSearchProp] = jsObject[tableToSearchProp];
+                //    console.dir(_obj);
+                //edw to obj ginete o,ti nane ...na to dw
+                promisesList.push(_this.putTablePropertyFrom(tableToSearch, _obj));
+            });
+            console.log(promisesList.length); //edw sunexeia dixnei... den stamataei pote.
+            Promise.all(promisesList).then(function () {
+                def.resolve(_obj);
+            }).error(function () {
+                def.reject("Error when parsing the object from table.");
             });
         }
         return def.promise;
     };
+    //toFind fernei to all, alla otan uparxoun '=' gamiete den ta fernei swsta prepei na to dw 
     MysqlTable.prototype.find = function (jsObject, callback) {
         var _this = this;
         var def = Promise.defer();
@@ -136,8 +142,7 @@ var MysqlTable = (function () {
         var tablesToSearch = [];
         var noDbProperties = [];
         var manySelectQuery = "";
-        for (var _i = 0; _i < jsObject.length; _i++) {
-            var objectKey = jsObject[_i];
+        for (var objectKey in jsObject) {
             var colName = MysqlTable.toRowProperty(objectKey);
             if (this.columns.indexOf(colName) !== -1 || this.primaryKey === colName) {
                 colsToSearch.push(colName + " = " + this.connection.escape(jsObject[objectKey]));
@@ -161,10 +166,12 @@ var MysqlTable = (function () {
                 def.reject(err);
             }
             var resultsPromises = [];
+            console.dir(results); //infinity loop...without reason lol
             [].forEach.call(results, function (result) {
                 resultsPromises.push(_this.parseQueryResult(jsObject, result, tablesToSearch));
             });
             Promise.all(resultsPromises).then(function (_objects) {
+                console.log('finish? '); //infinity loop...without reason lol
                 if (noDbProperties.length > 0) {
                     [].forEach.call(_objects, function (theObj) {
                         for (var pr = 0; pr < noDbProperties.length; pr++) {
@@ -172,12 +179,18 @@ var MysqlTable = (function () {
                         }
                     });
                 }
+                //console.dir(_objects);
+                if (callback) {
+                    callback(_objects);
+                }
                 def.resolve(_objects);
             });
         });
         return def.promise;
     };
-    MysqlTable.prototype.findAll = function (callback) { return this.find({}, callback); };
+    MysqlTable.prototype.findAll = function (callback) {
+        return this.find({}, callback);
+    };
     MysqlTable.prototype.save = function (jsObject, callback) {
         var _this = this;
         //sta arguments borw na perniounte ta values me tin seira, ton properties pou exei to model-jsObject 
@@ -198,7 +211,7 @@ var MysqlTable = (function () {
             var _query = "UPDATE " + this.name + " SET " + colummnsAndValuesStr + " WHERE " + this.primaryKey + " =  " + primaryKeyValue;
             this.connection.query(_query, function (err, result) {
                 if (err) {
-                    console.dir(err);
+                    // console.dir(err);
                     def.reject(err);
                 }
                 _this.connection.notice(_this.name, _query, jsObject);
@@ -213,7 +226,6 @@ var MysqlTable = (function () {
             var _query = "INSERT INTO ?? (??) VALUES(?) ";
             this.connection.query(_query, function (err, result) {
                 if (err) {
-                    console.dir(err);
                     def.reject(err);
                 }
                 // jsObject[this.primaryKey] = result.insertId;
@@ -239,7 +251,7 @@ var MysqlTable = (function () {
         var _query = "DELETE FROM " + this.name + " WHERE " + this.primaryKey + " = " + primaryKeyValue;
         this.connection.query(_query, function (err, result) {
             if (err) {
-                console.dir(err);
+                // console.dir(err);
                 def.reject(err);
             }
             jsObject.affectedRows = result.affectedRows;
@@ -268,7 +280,7 @@ var MysqlTable = (function () {
             var _query = "DELETE FROM " + this.name + " WHERE " + colummnsAndValues.join(' AND ');
             this.connection.query(_query, function (err, result) {
                 if (err) {
-                    console.dir(err);
+                    //console.dir(err);
                     def.reject(err);
                 }
                 jsObject.affectedRows = result.affectedRows;
@@ -286,5 +298,5 @@ var MysqlTable = (function () {
     };
     return MysqlTable;
 })();
-exports.MysqlTable = MysqlTable;
+exports.default = MysqlTable;
 //# sourceMappingURL=MysqlTable.js.map

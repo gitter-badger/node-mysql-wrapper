@@ -68,8 +68,8 @@ var {name, browserStatus:{opera}} = topic;  //name: 'ECMAScript 6', opera: 'part
 */
 
 
-import {MysqlConnection} from "./lib/MysqlConnection";
-import {MysqlWrapper} from "./lib/MysqlWrapper";
+import MysqlConnection from "./lib/MysqlConnection";
+import MysqlWrapper from "./lib/MysqlWrapper";
 import * as Mysql from "mysql";
 
 if (Function.prototype["name"] === undefined) {

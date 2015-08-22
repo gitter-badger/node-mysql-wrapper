@@ -17,10 +17,11 @@ var db = wrapper.wrap("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset
 db.ready(() => { //makes the connect or the link from prev connection and then call the function when it's ready. In here you can load your modules that inherites the wrapper.
  
     db.table("comments").findAll((results) => {   // or db["comments"]...
-      
+        console.log(' found ' + results.length + ' [all] comments ');
         console.dir(results);
+        console.log('-------------------------------------');
     });
-
+ 
     db.table("users").find(
         {
             yearsOld: 22,
@@ -32,9 +33,11 @@ db.ready(() => { //makes the connect or the link from prev connection and then c
                     users: { userId: '=' }
                 }
             }
-        }, function (_results) {
-            [].forEach.call(_results, function (result) {
-                console.dir(result);
+        },  (_results)=> {
+        console.dir(_results);
+        [].forEach.call(_results, (result) => {
+            console.dir(result);
+            /*
                 console.log("=========COMMENTS from " + result.username + (result.userInfos.length > 0 ? " which hometown is " + result.userInfos[0].hometown : '') + " ======\n");
 
                 [].forEach.call(result.comments, function (comment) {
@@ -44,10 +47,10 @@ db.ready(() => { //makes the connect or the link from prev connection and then c
                         console.log('first like on this comment liked by: ' + comment.commentLikes[0].users[0].username);
                 });
 
-                console.log("===============\n\n");
-            });
+                console.log("===============\n\n");      */
+        });
 
-
+               
         });
 
     if (db.table("users").has("mailExists") === false) {

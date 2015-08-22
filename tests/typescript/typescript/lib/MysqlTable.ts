@@ -1,9 +1,9 @@
 ﻿//import {MysqlConnection, EventTypes} from "MysqlConnection";
-import {MysqlConnection} from "MysqlConnection";
+import MysqlConnection from "MysqlConnection";
 import * as Promise from 'bluebird';
 export var EQUAL_TO_PROPERTY_SYMBOL = '=';
 
-export class MysqlTable {
+class MysqlTable {
     name: string;
     connection: MysqlConnection;
     private _columns: string[];
@@ -68,8 +68,8 @@ export class MysqlTable {
         let _arr = new Array();
         let _columns = [];
         let _values = [];
-
-        for (let key of jsObject) {
+        //'of' doesnt works for the properties.
+        for (let key in jsObject) {
             let _col = MysqlTable.toRowProperty(key);
             //only if this key/property of object is actualy a column (except  primary key)
         
@@ -111,12 +111,14 @@ export class MysqlTable {
 
     putTablePropertyFrom(mysqlTableToSearch: string, parentObj: any): Promise<void> {
         let def = Promise.defer();
+
         let tableProperty = MysqlTable.toObjectProperty(mysqlTableToSearch);
         let tablePropertyObj = parentObj[tableProperty];
-
-        for (let key of tablePropertyObj) { //or in
+        for (let key in tablePropertyObj) { //or in
             let _val = tablePropertyObj[key];
+
             if (_val === EQUAL_TO_PROPERTY_SYMBOL) {
+               // console.log(key + " is equal to " + parentObj[key]);
                 tablePropertyObj[key] = parentObj[key];
             }
         }
@@ -132,35 +134,45 @@ export class MysqlTable {
     parseQueryResult(jsObject: any, result: any, tablesToSearch: string[]): Promise<any> {
         let def = Promise.defer();
         let _obj = {};
-        let self = this;
-        for (let key of result) {
+        for (let key in result) {
             let propertyObjKey = MysqlTable.toObjectProperty(key);
             _obj[propertyObjKey] = result[key];
         }
 
+
+
         if (tablesToSearch.length === 0) {
+            // console.dir(_obj);
             def.resolve(_obj);
         } else {
+            // console.dir(_obj); //ews ewd kala paei
             let promisesList = [];
 
-            [].forEach.call(tablesToSearch, (tableToSearch: string) => {
+            [].forEach.call(tablesToSearch, (tableToSearch: string) => {    
+                //apo edw kai pera den teleiwnei pote i fasi ....
+
                 let tableToSearchProp = MysqlTable.toObjectProperty(tableToSearch);
 
-                _obj = jsObject[tableToSearchProp] = jsObject[tableToSearchProp];
-                promisesList.push(self.putTablePropertyFrom(tableToSearch, _obj));
-
-                Promise.all(promisesList).then(() => {
-                    def.resolve(_obj);
-                }).error(() => {
-                    def.reject("Error when parsing the object from table.");
-                });
+                _obj[tableToSearchProp] = jsObject[tableToSearchProp];
+                //    console.dir(_obj);
+                //edw to obj ginete o,ti nane ...na to dw
+                promisesList.push(this.putTablePropertyFrom(tableToSearch, _obj));
             });
+            console.log(promisesList.length);    //edw sunexeia dixnei... den stamataei pote.
+            Promise.all(promisesList).then(() => {
+           
+                def.resolve(_obj);
+            }).error(() => {
+                def.reject("Error when parsing the object from table.");
+            });
+
 
         }
 
         return def.promise;
     }
 
+    //toFind fernei to all, alla otan uparxoun '=' gamiete den ta fernei swsta prepei na to dw 
     find(jsObject: any, callback?: (_results: any[]) => any): Promise<any> {
         let def = Promise.defer();
 
@@ -170,7 +182,7 @@ export class MysqlTable {
         let noDbProperties = [];
         let manySelectQuery = "";
 
-        for (let objectKey of jsObject) {
+        for (let objectKey in jsObject) {
             let colName = MysqlTable.toRowProperty(objectKey);
 
             if (this.columns.indexOf(colName) !== -1 || this.primaryKey === colName) {
@@ -196,12 +208,14 @@ export class MysqlTable {
             }
 
             let resultsPromises = [];
-
+            console.dir(results);    //infinity loop...without reason lol
             [].forEach.call(results, (result) => {
                 resultsPromises.push(this.parseQueryResult(jsObject, result, tablesToSearch));
+              
             });
 
             Promise.all(resultsPromises).then((_objects: any[]) => {
+                console.log('finish? ');   //infinity loop...without reason lol
                 if (noDbProperties.length > 0) {
                     [].forEach.call(_objects, (theObj: any) => {
 
@@ -209,6 +223,10 @@ export class MysqlTable {
                             theObj[noDbProperties[pr]] = jsObject[noDbProperties[pr]];
                         }
                     });
+                }
+                //console.dir(_objects);
+                if (callback) {
+                    callback(_objects);
                 }
 
                 def.resolve(_objects);
@@ -219,7 +237,10 @@ export class MysqlTable {
         return def.promise;
     }
 
-    findAll(callback?:(_results:any[])=>any): Promise<any> { return this.find({},callback); }
+    findAll(callback?: (_results: any[]) => any): Promise<any> {
+
+        return this.find({}, callback);
+    }
 
     save(jsObject: any, callback?: (_result: any) => any): Promise<any> {
         //sta arguments borw na perniounte ta values me tin seira, ton properties pou exei to model-jsObject 
@@ -242,7 +263,7 @@ export class MysqlTable {
             let _query = "UPDATE " + this.name + " SET " + colummnsAndValuesStr + " WHERE " + this.primaryKey + " =  " + primaryKeyValue;
             this.connection.query(_query, (err, result) => {
                 if (err) {
-                    console.dir(err);
+                    // console.dir(err);
                     def.reject(err);
 
                 }
@@ -257,7 +278,9 @@ export class MysqlTable {
             //create
             let _query = "INSERT INTO ?? (??) VALUES(?) ";
             this.connection.query(_query, (err, result) => {
-                if (err) { console.dir(err); def.reject(err); }
+                if (err) {// console.dir(err);
+                    def.reject(err);
+                }
                 // jsObject[this.primaryKey] = result.insertId;
 
                 var primaryKeyJsObjectProperty = MysqlTable.toObjectProperty(this.primaryKey);
@@ -269,7 +292,7 @@ export class MysqlTable {
                 if (callback) {
                     callback(jsObject);
                 }
-             
+
 
             }, [this.name, objectColumns, objectValues]);
         }
@@ -287,7 +310,7 @@ export class MysqlTable {
         let _query = "DELETE FROM " + this.name + " WHERE " + this.primaryKey + " = " + primaryKeyValue;
         this.connection.query(_query, (err, result) => {
             if (err) {
-                console.dir(err);
+                // console.dir(err);
                 def.reject(err);
             }
             jsObject.affectedRows = result.affectedRows;
@@ -318,7 +341,7 @@ export class MysqlTable {
             let _query = "DELETE FROM " + this.name + " WHERE " + colummnsAndValues.join(' AND ');
             this.connection.query(_query, (err, result) => {
                 if (err) {
-                    console.dir(err);
+                    //console.dir(err);
                     def.reject(err);
                 }
                 jsObject.affectedRows = result.affectedRows;
@@ -335,6 +358,8 @@ export class MysqlTable {
     }
 
 }
+
+export default  MysqlTable;
 
                                       
   

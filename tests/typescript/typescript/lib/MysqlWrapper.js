@@ -1,5 +1,5 @@
 var Promise = require('bluebird');
-var MysqlTable_1 = require("MysqlTable");
+var MysqlTable_1 = require("./MysqlTable");
 var MysqlWrapper = (function () {
     function MysqlWrapper(connection) {
         this.readyListenerCallbacks = new Array(); //()=>void
@@ -48,7 +48,7 @@ var MysqlWrapper = (function () {
             //means the first listener,so  do the link/connect to the connection now. No before.
             this.connection.link().then(function () {
                 [].forEach.call(_this.connection.tables, function (_table) {
-                    _this[MysqlTable_1.MysqlTable.toObjectProperty(_table.name)] = _this[_table.name] = _table;
+                    _this[MysqlTable_1.default.toObjectProperty(_table.name)] = _this[_table.name] = _table;
                 });
                 _this.noticeReady();
             });
@@ -83,5 +83,5 @@ var MysqlWrapper = (function () {
     };
     return MysqlWrapper;
 })();
-exports.MysqlWrapper = MysqlWrapper;
+exports.default = MysqlWrapper;
 //# sourceMappingURL=MysqlWrapper.js.map

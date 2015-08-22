@@ -83,8 +83,8 @@ function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection) {
     for (var _i = 1; _i < arguments.length; _i++) {
         useTables[_i - 1] = arguments[_i];
     }
-    var mysqlCon = new MysqlConnection_1.MysqlConnection(mysqlUrlOrObjectOrMysqlAlreadyConnection);
-    var mysqlWrapper = new MysqlWrapper_1.MysqlWrapper(mysqlCon);
+    var mysqlCon = new MysqlConnection_1.default(mysqlUrlOrObjectOrMysqlAlreadyConnection);
+    var mysqlWrapper = new MysqlWrapper_1.default(mysqlCon);
     if (useTables) {
         mysqlWrapper.useOnly(useTables);
     }

@@ -1,10 +1,10 @@
-﻿import {MysqlConnection} from "MysqlConnection";
+﻿import MysqlConnection from "./MysqlConnection";
 import * as Promise from 'bluebird';
 import * as Mysql from 'mysql';
-import {MysqlTable} from "MysqlTable";
+import MysqlTable from "./MysqlTable";
 
 
-export class MysqlWrapper {
+ class MysqlWrapper {
     connection: MysqlConnection;
     readyListenerCallbacks = new Array<Function>();            //()=>void
 
@@ -99,3 +99,5 @@ export class MysqlWrapper {
     }
 
 }
+
+export default MysqlWrapper;
