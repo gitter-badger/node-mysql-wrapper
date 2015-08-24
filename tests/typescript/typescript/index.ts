@@ -43,7 +43,7 @@ userTable.findAll(results,()=>{ //or promise
 User userToFind = new User();
 userToFind.userId = 18;
 userTable.find(userToFind,()=>{  //or promise
-  //kai edw ti? oti to userToFind object einai etoimo me ola ta properties? ti ston poutso na valei o developer edw mesa... 
+  //kai edw ti? oti to userToFind object einai etoimo me ola ta properties? ti ston poutso na valei o developer edw mesa...
   //prepei na psaksw ta await gia na to kanw: await userTable.find(userToFind); console.log(userToFind.username);
   //or: user userToFind = await userTable.find({userId:18});
 });
@@ -62,7 +62,7 @@ Destructuring
         ie: 'very less',
         ieTechPreview: 'partial'
     }};
- 
+
 var {name, browserStatus:{opera}} = topic;  //name: 'ECMAScript 6', opera: 'partial
 
 */
@@ -86,11 +86,10 @@ if (Function.prototype["name"] === undefined) {
 export  function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection: Mysql.IConnection |  string, ...useTables: any[]): MysqlWrapper {
     let mysqlCon = new MysqlConnection(mysqlUrlOrObjectOrMysqlAlreadyConnection);
     let mysqlWrapper = new MysqlWrapper(mysqlCon);
+
     if (useTables) {
         mysqlWrapper.useOnly(useTables);
     }
 
     return mysqlWrapper;
 }
-
-

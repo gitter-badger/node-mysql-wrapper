@@ -11,13 +11,9 @@ var db = wrapper.wrap("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset
 //, "users", "user_infos", ["comments", "comment_likes"]); // second parameter for the tables you want to use ( default is all tables). OR->
 //db.useOnly/.useTables("users", "user_infos", ["comments", "comment_likes"]);// default is to use all tables., must be called before _W.ready().
 db.ready(function () {
-    db.table("comments").findAll(function (results) {
-        console.log(' found ' + results.length + ' [all] comments ');
-        console.dir(results);
-        console.log('-------------------------------------');
-    });
-    db.table("users").find({
+    db.table("users").find2({
         yearsOld: 22,
+        somethingElse: "something else",
         userInfos: { userId: '=' },
         comments: {
             userId: '=',
@@ -27,8 +23,28 @@ db.ready(function () {
             }
         }
     }, function (_results) {
+        console.log('FINISH FIND2 ON USERS');
+    });
+    /*  db.table("comments").findAll((results) => {   // or db["comments"]...
+        console.log(' found ' + results.length + ' [all] comments ');
+        console.dir(results);
+        console.log('-------------------------------------');
+    });
+ 
+    db.table("users").find(
+        {
+            yearsOld: 22,
+            userInfos: { userId: '=' },
+            comments: {
+                userId: '=',
+                commentLikes: {
+                    commentId: '=',
+                    users: { userId: '=' }
+                }
+            }
+        },  (_results)=> {
         console.dir(_results);
-        [].forEach.call(_results, function (result) {
+        [].forEach.call(_results, (result) => {
             console.dir(result);
             /*
                 console.log("=========COMMENTS from " + result.username + (result.userInfos.length > 0 ? " which hometown is " + result.userInfos[0].hometown : '') + " ======\n");
@@ -40,31 +56,40 @@ db.ready(function () {
                         console.log('first like on this comment liked by: ' + comment.commentLikes[0].users[0].username);
                 });
 
-                console.log("===============\n\n");      */
+                console.log("===============\n\n");
         });
-    });
+
+               
+        });
+
     if (db.table("users").has("mailExists") === false) {
-        db.table("users").extend("mailExists", function (mail, callback) {
+
+        db.table("users").extend("mailExists", function (mail, callback) {// OR MySQLModel.extend... this is a shared custom function extends for all models.
             //to use find,save,delete,safeDelete we can do: this.model({mail:mail}); this.find(model,function(results){});
             //this =  the caller's MySQLTable, for example this =  the new  MySQLTable("users",db.connection), where this.name = "users", look at the next function.
             this.connection.query("SELECT COUNT(*) FROM " + this.name + " WHERE mail = " + this.connection.escape(mail), function (err, results) {
                 if (!err && results.length > 0 && results[0]["COUNT(*)"] > 0) {
                     callback(true);
-                }
-                else {
+                } else {
                     callback(false);
                 }
             });
+
         });
+
         db.table("users").extend("createSpecialUser", function (username, callback) {
             //var model= this.model();
             //this.save(model,callback);
+            
             this.save({ username: username, mail: "special@email.com", yearsOld: 23 }, callback);
         });
     }
+
     db.table("users")["mailExists"]("mail20_updated@omakis.com", function (trueOrFalse) {
         console.log("User mail exists? " + trueOrFalse);
     });
+
+  */
 });
 //END OF EXAMPLES AND TESTS.
 var httpPort = 1193; //config.get('Server.port') || 1193;

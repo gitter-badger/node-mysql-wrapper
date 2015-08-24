@@ -51,36 +51,34 @@ class MysqlConnection {
         this.connection.destroy();
     }
 
-    link(readyCallback?: () => void): Promise<any> {
-        let def = Promise.defer();
-        let callback: Function = readyCallback ||
-            ((err: any) => {
-                if (err) {
-                    console.error('MYSQL: error connecting: ' + err.stack);
-                    def.reject(err.stack);
+    link(readyCallback?: () => void): Promise<void> {
+        return new Promise<void>((resolve, reject) => {
+            let callback: Function = readyCallback ||
+                ((err: any) => {
+                    if (err) {
+                        console.error('MYSQL: error connecting: ' + err.stack);
+                        reject(err.stack);
 
-                }
+                    }
 
-                //console.log('MYSQL: connected as id ' + self.connection.threadId);
-                this.fetchDatabaseInfornation().then(() => {
-                    def.resolve();
-                    // self.noticeReady();
+                    //console.log('MYSQL: connected as id ' + self.connection.threadId);
+                    this.fetchDatabaseInfornation().then(() => {
+                        resolve();
+                        // self.noticeReady();
+                    });
+
+
                 });
 
+            // if (this.connection.state === 'authenticated') {
+            if (this.connection['state'] === 'disconnected' || this.connection['state'] === 'connecting') {
+                this.connection.connect(callback);
+            } else {   //means this.connection['state'] === 'authenticated', so just callback and promise resolve.
+                callback();
+                resolve();
+            }
 
-            });
-
-        // if (this.connection.state === 'authenticated') {
-        if (this.connection['state'] === 'disconnected' || this.connection['state'] === 'connecting') {
-            this.connection.connect(callback);
-        } else {   //means this.connection['state'] === 'authenticated', so just callback and promise resolve.
-            callback();
-            def.resolve();
-
-
-        }
-
-        return def.promise;
+        });
     }
 
     useOnly(...tables: any[]): void {
@@ -101,32 +99,32 @@ class MysqlConnection {
     fetchDatabaseInfornation(): Promise<void> {
         //Ta kanw ola edw gia na doulepsei to def.resolve kai na einai etoimo olo to module molis ola ta tables kai ola ta columns dhlwthoun.
 
-        let def = Promise.defer();
-        //ta results pou 9eloume einai panta ta: results[0]. 
-        this.connection.query("SELECT DISTINCT TABLE_NAME ,column_name FROM INFORMATION_SCHEMA.key_column_usage WHERE TABLE_SCHEMA IN ('" + this.connection.config.database + "');",
+        return new Promise<void>((resolve, reject) => {
+            //ta results pou 9eloume einai panta ta: results[0]. 
+            this.connection.query("SELECT DISTINCT TABLE_NAME ,column_name FROM INFORMATION_SCHEMA.key_column_usage WHERE TABLE_SCHEMA IN ('" + this.connection.config.database + "');",
             (err: Mysql.IError, ...results: any[]) => {
                 if (err) {
-                    def.reject(err);
+                    reject(err);
                 }
                 [].forEach.call(results[0], (tableObj, currentPosition) => {
                     //.log(tableObj.TABLE_NAME);
                     if (this.tableNamesToUseOnly.length > 0 && this.tableNamesToUseOnly.indexOf(tableObj.TABLE_NAME) !== -1) {
                         //means that only to use called, and this table is not in this collection, so don't fetch it.
-                        
+
                     } else {
                         let _table = new MysqlTable(tableObj.TABLE_NAME, this);
                         _table.primaryKey = (tableObj.column_name);
 
                         this.connection.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + this.connection.config.database + "' AND TABLE_NAME = '" + _table.name + "';", (errC: Mysql.IError, ...resultsC: any[]) => {
                             if (errC) {
-                                def.reject(err);
+                                reject(err);
                             }
 
                             let _tableColumns = [];
 
                             for (let i = 0; i < resultsC[0].length; i++) {
 
-                                let _columnName = resultsC[0][i]['COLUMN_NAME'];//.COLUMN_NAME
+                                let _columnName = resultsC[0][i]['COLUMN_NAME']; //.COLUMN_NAME
                                 if (_columnName !== _table.primaryKey) {
                                     _tableColumns.push(_columnName);
                                 }
@@ -138,8 +136,8 @@ class MysqlConnection {
                             // console.dir(_table.columns);
                             if (currentPosition === results[0].length - 1) {
                                 //otan teleiwsoume me ola
-                        
-                                def.resolve();
+
+                                resolve();
                             }
 
                         });
@@ -149,7 +147,7 @@ class MysqlConnection {
 
             });
 
-        return <any>(def.promise);
+        });
     }
 
     escape(val: string): string {

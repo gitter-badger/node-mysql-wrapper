@@ -44,6 +44,7 @@
     <TypeScriptCompile Include="index.ts" />
     <TypeScriptCompile Include="lib\MysqlConnection.ts" />
     <TypeScriptCompile Include="lib\MysqlTable.ts" />
+    <TypeScriptCompile Include="lib\MysqlUtil.ts" />
     <TypeScriptCompile Include="lib\MysqlWrapper.ts" />
   </ItemGroup>
   <ItemGroup>

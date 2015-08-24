@@ -62,7 +62,7 @@ Destructuring
         ie: 'very less',
         ieTechPreview: 'partial'
     }};
- 
+
 var {name, browserStatus:{opera}} = topic;  //name: 'ECMAScript 6', opera: 'partial
 
 */

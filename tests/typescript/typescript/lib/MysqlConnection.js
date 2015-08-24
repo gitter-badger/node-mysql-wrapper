@@ -43,28 +43,28 @@ var MysqlConnection = (function () {
     };
     MysqlConnection.prototype.link = function (readyCallback) {
         var _this = this;
-        var def = Promise.defer();
-        var callback = readyCallback ||
-            (function (err) {
-                if (err) {
-                    console.error('MYSQL: error connecting: ' + err.stack);
-                    def.reject(err.stack);
-                }
-                //console.log('MYSQL: connected as id ' + self.connection.threadId);
-                _this.fetchDatabaseInfornation().then(function () {
-                    def.resolve();
-                    // self.noticeReady();
+        return new Promise(function (resolve, reject) {
+            var callback = readyCallback ||
+                (function (err) {
+                    if (err) {
+                        console.error('MYSQL: error connecting: ' + err.stack);
+                        reject(err.stack);
+                    }
+                    //console.log('MYSQL: connected as id ' + self.connection.threadId);
+                    _this.fetchDatabaseInfornation().then(function () {
+                        resolve();
+                        // self.noticeReady();
+                    });
                 });
-            });
-        // if (this.connection.state === 'authenticated') {
-        if (this.connection['state'] === 'disconnected' || this.connection['state'] === 'connecting') {
-            this.connection.connect(callback);
-        }
-        else {
-            callback();
-            def.resolve();
-        }
-        return def.promise;
+            // if (this.connection.state === 'authenticated') {
+            if (_this.connection['state'] === 'disconnected' || _this.connection['state'] === 'connecting') {
+                _this.connection.connect(callback);
+            }
+            else {
+                callback();
+                resolve();
+            }
+        });
     };
     MysqlConnection.prototype.useOnly = function () {
         var tables = [];
@@ -88,51 +88,51 @@ var MysqlConnection = (function () {
     MysqlConnection.prototype.fetchDatabaseInfornation = function () {
         //Ta kanw ola edw gia na doulepsei to def.resolve kai na einai etoimo olo to module molis ola ta tables kai ola ta columns dhlwthoun.
         var _this = this;
-        var def = Promise.defer();
-        //ta results pou 9eloume einai panta ta: results[0]. 
-        this.connection.query("SELECT DISTINCT TABLE_NAME ,column_name FROM INFORMATION_SCHEMA.key_column_usage WHERE TABLE_SCHEMA IN ('" + this.connection.config.database + "');", function (err) {
-            var results = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                results[_i - 1] = arguments[_i];
-            }
-            if (err) {
-                def.reject(err);
-            }
-            [].forEach.call(results[0], function (tableObj, currentPosition) {
-                //.log(tableObj.TABLE_NAME);
-                if (_this.tableNamesToUseOnly.length > 0 && _this.tableNamesToUseOnly.indexOf(tableObj.TABLE_NAME) !== -1) {
+        return new Promise(function (resolve, reject) {
+            //ta results pou 9eloume einai panta ta: results[0]. 
+            _this.connection.query("SELECT DISTINCT TABLE_NAME ,column_name FROM INFORMATION_SCHEMA.key_column_usage WHERE TABLE_SCHEMA IN ('" + _this.connection.config.database + "');", function (err) {
+                var results = [];
+                for (var _i = 1; _i < arguments.length; _i++) {
+                    results[_i - 1] = arguments[_i];
                 }
-                else {
-                    var _table = new MysqlTable_1.default(tableObj.TABLE_NAME, _this);
-                    _table.primaryKey = (tableObj.column_name);
-                    _this.connection.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + _this.connection.config.database + "' AND TABLE_NAME = '" + _table.name + "';", function (errC) {
-                        var resultsC = [];
-                        for (var _i = 1; _i < arguments.length; _i++) {
-                            resultsC[_i - 1] = arguments[_i];
-                        }
-                        if (errC) {
-                            def.reject(err);
-                        }
-                        var _tableColumns = [];
-                        for (var i = 0; i < resultsC[0].length; i++) {
-                            var _columnName = resultsC[0][i]['COLUMN_NAME']; //.COLUMN_NAME
-                            if (_columnName !== _table.primaryKey) {
-                                _tableColumns.push(_columnName);
+                if (err) {
+                    reject(err);
+                }
+                [].forEach.call(results[0], function (tableObj, currentPosition) {
+                    //.log(tableObj.TABLE_NAME);
+                    if (_this.tableNamesToUseOnly.length > 0 && _this.tableNamesToUseOnly.indexOf(tableObj.TABLE_NAME) !== -1) {
+                    }
+                    else {
+                        var _table = new MysqlTable_1.default(tableObj.TABLE_NAME, _this);
+                        _table.primaryKey = (tableObj.column_name);
+                        _this.connection.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + _this.connection.config.database + "' AND TABLE_NAME = '" + _table.name + "';", function (errC) {
+                            var resultsC = [];
+                            for (var _i = 1; _i < arguments.length; _i++) {
+                                resultsC[_i - 1] = arguments[_i];
                             }
-                        }
-                        _table.columns = (_tableColumns);
-                        _this.tables.push(_table);
-                        //console.log('pushing ' + _table.name + ' with primary: ' + _table.primaryKey + ' and columns: ');
-                        // console.dir(_table.columns);
-                        if (currentPosition === results[0].length - 1) {
-                            //otan teleiwsoume me ola
-                            def.resolve();
-                        }
-                    });
-                }
+                            if (errC) {
+                                reject(err);
+                            }
+                            var _tableColumns = [];
+                            for (var i = 0; i < resultsC[0].length; i++) {
+                                var _columnName = resultsC[0][i]['COLUMN_NAME']; //.COLUMN_NAME
+                                if (_columnName !== _table.primaryKey) {
+                                    _tableColumns.push(_columnName);
+                                }
+                            }
+                            _table.columns = (_tableColumns);
+                            _this.tables.push(_table);
+                            //console.log('pushing ' + _table.name + ' with primary: ' + _table.primaryKey + ' and columns: ');
+                            // console.dir(_table.columns);
+                            if (currentPosition === results[0].length - 1) {
+                                //otan teleiwsoume me ola
+                                resolve();
+                            }
+                        });
+                    }
+                });
             });
         });
-        return (def.promise);
     };
     MysqlConnection.prototype.escape = function (val) {
         return this.connection.escape(val);

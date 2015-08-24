@@ -1,10 +1,12 @@
 ﻿import MysqlConnection from "./MysqlConnection";
+import MysqlUtil from "./MysqlUtil";
+
 import * as Promise from 'bluebird';
 import * as Mysql from 'mysql';
 import MysqlTable from "./MysqlTable";
 
 
- class MysqlWrapper {
+class MysqlWrapper {
     connection: MysqlConnection;
     readyListenerCallbacks = new Array<Function>();            //()=>void
 
@@ -12,19 +14,20 @@ import MysqlTable from "./MysqlTable";
         this.setConnection(connection);
     }
 
-    static when(..._promises:Promise<any>[]): Promise<any> {
-        let def = Promise.defer();
-      //  let promises = Array.prototype.slice.call(arguments);
+    static when(..._promises: Promise<any>[]): Promise<any> {
+        return new Promise<any>((resolve, reject) => {
+            //  let promises = Array.prototype.slice.call(arguments);
 
-        if (Array.isArray(_promises[0])) {
-            _promises = Array.prototype.slice.call(_promises[0]);
-        } //here I check if first argument is array instead of just a function argument, Promise.all doesnt have this by default...but it should.
-    
-    
-        Promise.all(_promises).then((results) => {
-            def.resolve(results);
+            if (Array.isArray(_promises[0])) {
+                _promises = Array.prototype.slice.call(_promises[0]);
+            } //here I check if first argument is array instead of just a function argument, Promise.all doesnt have this by default...but it should.
+
+
+            Promise.all(_promises).then((results) => {
+                resolve(results);
+            }).catch((_err: any) => { reject(_err); });
+
         });
-        return def.promise;
     }
 
     setConnection(connection: MysqlConnection): void {
@@ -56,7 +59,7 @@ import MysqlTable from "./MysqlTable";
 
             this.connection.link().then(() => {
                 [].forEach.call(this.connection.tables, (_table: MysqlTable) => {
-                    this[MysqlTable.toObjectProperty(_table.name)] = this[_table.name] = _table;
+                    this[MysqlUtil.toObjectProperty(_table.name)] = this[_table.name] = _table;
                 });
 
                 this.noticeReady();
@@ -65,7 +68,7 @@ import MysqlTable from "./MysqlTable";
         }
     }
 
-    table(tableName: string) {
+    table(tableName: string):MysqlTable {
         return this.connection.table(tableName);
     }
 
@@ -88,7 +91,7 @@ import MysqlTable from "./MysqlTable";
         this.connection.query(queryStr, callback, queryArguments);
     }
 
-    destroy() {
+    destroy():void {
         this.readyListenerCallbacks = [];
         this.connection.destroy();
     }

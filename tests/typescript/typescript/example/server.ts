@@ -8,15 +8,30 @@ var httpServer = http.createServer(app);
 var path = require('path');
 var config = require('config');
 import * as wrapper from "../index";
- 
+
 var db = wrapper.wrap("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8");  // this returns a MysqlWrapper object.
 
 
 //, "users", "user_infos", ["comments", "comment_likes"]); // second parameter for the tables you want to use ( default is all tables). OR->
 //db.useOnly/.useTables("users", "user_infos", ["comments", "comment_likes"]);// default is to use all tables., must be called before _W.ready().
 db.ready(() => { //makes the connect or the link from prev connection and then call the function when it's ready. In here you can load your modules that inherites the wrapper.
- 
-    db.table("comments").findAll((results) => {   // or db["comments"]...
+
+    db.table("users").find2({
+        yearsOld: 22,
+        somethingElse:"something else",
+        userInfos: { userId: '=' },
+        comments: {
+            userId: '=',
+            commentLikes: {
+                commentId: '=',
+                users: { userId: '=' }
+            }
+        }
+    }, (_results) => {
+        console.log('FINISH FIND2 ON USERS');
+
+    });
+    /*  db.table("comments").findAll((results) => {   // or db["comments"]...
         console.log(' found ' + results.length + ' [all] comments ');
         console.dir(results);
         console.log('-------------------------------------');
@@ -47,7 +62,7 @@ db.ready(() => { //makes the connect or the link from prev connection and then c
                         console.log('first like on this comment liked by: ' + comment.commentLikes[0].users[0].username);
                 });
 
-                console.log("===============\n\n");      */
+                console.log("===============\n\n");      
         });
 
                
@@ -80,7 +95,7 @@ db.ready(() => { //makes the connect or the link from prev connection and then c
         console.log("User mail exists? " + trueOrFalse);
     });
 
-
+  */
 });
 //END OF EXAMPLES AND TESTS.
 

@@ -10,6 +10,7 @@
     "experimentalDecorators": true
   },
   "files": [
-   
+    "index.ts",
+    "/lib/*.ts"
   ]
 }

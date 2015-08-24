@@ -1,5 +1,5 @@
+var MysqlUtil_1 = require("./MysqlUtil");
 var Promise = require('bluebird');
-var MysqlTable_1 = require("./MysqlTable");
 var MysqlWrapper = (function () {
     function MysqlWrapper(connection) {
         this.readyListenerCallbacks = new Array(); //()=>void
@@ -10,15 +10,15 @@ var MysqlWrapper = (function () {
         for (var _i = 0; _i < arguments.length; _i++) {
             _promises[_i - 0] = arguments[_i];
         }
-        var def = Promise.defer();
-        //  let promises = Array.prototype.slice.call(arguments);
-        if (Array.isArray(_promises[0])) {
-            _promises = Array.prototype.slice.call(_promises[0]);
-        } //here I check if first argument is array instead of just a function argument, Promise.all doesnt have this by default...but it should.
-        Promise.all(_promises).then(function (results) {
-            def.resolve(results);
+        return new Promise(function (resolve, reject) {
+            //  let promises = Array.prototype.slice.call(arguments);
+            if (Array.isArray(_promises[0])) {
+                _promises = Array.prototype.slice.call(_promises[0]);
+            } //here I check if first argument is array instead of just a function argument, Promise.all doesnt have this by default...but it should.
+            Promise.all(_promises).then(function (results) {
+                resolve(results);
+            }).catch(function (_err) { reject(_err); });
         });
-        return def.promise;
     };
     MysqlWrapper.prototype.setConnection = function (connection) {
         this.connection = connection;
@@ -48,7 +48,7 @@ var MysqlWrapper = (function () {
             //means the first listener,so  do the link/connect to the connection now. No before.
             this.connection.link().then(function () {
                 [].forEach.call(_this.connection.tables, function (_table) {
-                    _this[MysqlTable_1.default.toObjectProperty(_table.name)] = _this[_table.name] = _table;
+                    _this[MysqlUtil_1.default.toObjectProperty(_table.name)] = _this[_table.name] = _table;
                 });
                 _this.noticeReady();
             });
