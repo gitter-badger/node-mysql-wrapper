@@ -13,7 +13,7 @@ class MysqlTable {
     constructor(tableName: string, connection: MysqlConnection) {
         this.name = tableName;
         this.connection = connection;
-
+             
         //edw to forEach gia ta functions tou Model.an den ta valw ola sto table, logika 9a ginete.
     }
 
@@ -60,18 +60,17 @@ class MysqlTable {
         let _columns = [];
         let _values = [];
         //'of' doesnt works for the properties.
-        for (let key in jsObject) {
+        MysqlUtil.forEachKey(jsObject, (key) => {
             let _col = MysqlUtil.toRowProperty(key);
             //only if this key/property of object is actualy a column (except  primary key)
 
             if (this.columns.indexOf(_col) !== -1) {
-
                 _columns.push(_col);
                 _values.push(jsObject[key]);
 
             }
+        });
 
-        }
 
         _arr.push(_columns);
         _arr.push(_values);
@@ -105,14 +104,15 @@ class MysqlTable {
 
             let tableProperty = MysqlUtil.toObjectProperty(mysqlTableToSearch);
             let tablePropertyObj = parentObj[tableProperty];
-            for (let key in tablePropertyObj) { //or in
+            MysqlUtil.forEachKey(tablePropertyObj, (key) => {
                 let _val = tablePropertyObj[key];
 
                 if (_val === EQUAL_TO_PROPERTY_SYMBOL) {
                     // console.log(key + " is equal to " + parentObj[key]);
                     tablePropertyObj[key] = parentObj[key];
                 }
-            }
+
+            });
 
             this.connection.table(mysqlTableToSearch).find(tablePropertyObj, (results: any[]) => {
                 parentObj[tableProperty] = results;
@@ -125,10 +125,10 @@ class MysqlTable {
     parseQueryResult(jsObject: any, result: any, tablesToSearch: string[]): Promise<any> {
         return new Promise<any>((resolve, reject) => {
             let _obj = {};
-            for (let key in result) {
+            MysqlUtil.forEachKey(result, (key) => {
                 let propertyObjKey = MysqlUtil.toObjectProperty(key);
                 _obj[propertyObjKey] = result[key];
-            }
+            });
 
             if (tablesToSearch.length === 0) {
                 // console.dir(_obj);
@@ -167,7 +167,8 @@ class MysqlTable {
             let tablesToSearch = [];
             let noDbProperties = [];
 
-            for (let objectKey in jsObject) {
+            MysqlUtil.forEachKey(jsObject, (objectKey) => {
+
                 let colName = MysqlUtil.toRowProperty(objectKey);
 
                 if (this.columns.indexOf(colName) !== -1 || this.primaryKey === colName) {
@@ -179,7 +180,7 @@ class MysqlTable {
                         noDbProperties.push(objectKey);
                     }
                 }
-            }
+            });
             let whereParameterStr = "";
 
             if (colsToSearch.length > 0) {
@@ -250,22 +251,22 @@ class MysqlTable {
         let tablesToSearch = [];
         let noDbProperties = [];
         let manySelectQuery = "";
+        MysqlUtil.forEachKey(criteria, (objectKey) => {
 
-        for (let objectKey in criteria) {
             if (criteria.hasOwnProperty(objectKey)) {
                 let colName = MysqlUtil.toRowProperty(objectKey);
 
-                if (this.columns.indexOf(colName) !== -1 || this.primaryKey === colName) {   // add to query- where clause
+                if (this.columns.indexOf(colName) !== -1 || this.primaryKey === colName) { // add to query- where clause
                     colsToSearch.push(colName + " = " + this.connection.escape(criteria[objectKey]));
                 } else { //if it's name is table's name,add to the tablesToSearch list for future use.
                     if (this.connection.table(colName) !== undefined) {
                         tablesToSearch.push(colName);
-                    } else {//not a table or a column? then add it to no database properties, these properties are passing to the results after all other operations have done.
+                    } else { //not a table or a column? then add it to no database properties, these properties are passing to the results after all other operations have done.
                         noDbProperties.push(objectKey);
                     }
                 }
             }
-        }
+        });
 
         let whereParameterStr = "";
 
@@ -295,15 +296,12 @@ class MysqlTable {
                     tablesToSearch.forEach((_tableToSearch: string) => {
                         let subCriteriaObjectPropertyname = MysqlUtil.toObjectProperty(_tableToSearch);
                         let subCriteria = criteria[subCriteriaObjectPropertyname];
-
-                        for (let subCriteriaKey in subCriteria) {
-                            //meta den einai '=' giauto to vgazw   if (subCriteria[subCriteriaKey] === EQUAL_TO_PROPERTY_SYMBOL) {
+                        MysqlUtil.forEachKey(subCriteria, (subCriteriaKey) => {
                             let resultColumnRowName = MysqlUtil.toRowProperty(subCriteriaKey);
                             if (result.hasOwnProperty(resultColumnRowName)) {
                                 subCriteria[subCriteriaKey] = result[resultColumnRowName];
                             }
-                            // }
-                        }
+                        }); 
                         //ws edw exoume
                         let subTable = this.connection.table(_tableToSearch);
                         let subFindPromise = subTable.find2(subCriteria);

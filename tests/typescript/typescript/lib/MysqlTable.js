@@ -43,18 +43,19 @@ var MysqlTable = (function () {
         }
     };
     MysqlTable.prototype.toRow = function (jsObject) {
+        var _this = this;
         var _arr = new Array();
         var _columns = [];
         var _values = [];
         //'of' doesnt works for the properties.
-        for (var key in jsObject) {
+        MysqlUtil_1.default.forEachKey(jsObject, function (key) {
             var _col = MysqlUtil_1.default.toRowProperty(key);
             //only if this key/property of object is actualy a column (except  primary key)
-            if (this.columns.indexOf(_col) !== -1) {
+            if (_this.columns.indexOf(_col) !== -1) {
                 _columns.push(_col);
                 _values.push(jsObject[key]);
             }
-        }
+        });
         _arr.push(_columns);
         _arr.push(_values);
         return _arr;
@@ -83,13 +84,13 @@ var MysqlTable = (function () {
         return new Promise(function (resolve, reject) {
             var tableProperty = MysqlUtil_1.default.toObjectProperty(mysqlTableToSearch);
             var tablePropertyObj = parentObj[tableProperty];
-            for (var key in tablePropertyObj) {
+            MysqlUtil_1.default.forEachKey(tablePropertyObj, function (key) {
                 var _val = tablePropertyObj[key];
                 if (_val === exports.EQUAL_TO_PROPERTY_SYMBOL) {
                     // console.log(key + " is equal to " + parentObj[key]);
                     tablePropertyObj[key] = parentObj[key];
                 }
-            }
+            });
             _this.connection.table(mysqlTableToSearch).find(tablePropertyObj, function (results) {
                 parentObj[tableProperty] = results;
                 resolve();
@@ -100,10 +101,10 @@ var MysqlTable = (function () {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var _obj = {};
-            for (var key in result) {
+            MysqlUtil_1.default.forEachKey(result, function (key) {
                 var propertyObjKey = MysqlUtil_1.default.toObjectProperty(key);
                 _obj[propertyObjKey] = result[key];
-            }
+            });
             if (tablesToSearch.length === 0) {
                 // console.dir(_obj);
                 resolve(_obj);
@@ -135,7 +136,7 @@ var MysqlTable = (function () {
             var colsToSearch = [];
             var tablesToSearch = [];
             var noDbProperties = [];
-            for (var objectKey in jsObject) {
+            MysqlUtil_1.default.forEachKey(jsObject, function (objectKey) {
                 var colName = MysqlUtil_1.default.toRowProperty(objectKey);
                 if (_this.columns.indexOf(colName) !== -1 || _this.primaryKey === colName) {
                     colsToSearch.push(colName + " = " + _this.connection.escape(jsObject[objectKey]));
@@ -148,7 +149,7 @@ var MysqlTable = (function () {
                         noDbProperties.push(objectKey);
                     }
                 }
-            }
+            });
             var whereParameterStr = "";
             if (colsToSearch.length > 0) {
                 whereParameterStr = " WHERE " + colsToSearch.join(" AND ");
@@ -208,14 +209,14 @@ var MysqlTable = (function () {
         var tablesToSearch = [];
         var noDbProperties = [];
         var manySelectQuery = "";
-        for (var objectKey in criteria) {
+        MysqlUtil_1.default.forEachKey(criteria, function (objectKey) {
             if (criteria.hasOwnProperty(objectKey)) {
                 var colName = MysqlUtil_1.default.toRowProperty(objectKey);
-                if (this.columns.indexOf(colName) !== -1 || this.primaryKey === colName) {
-                    colsToSearch.push(colName + " = " + this.connection.escape(criteria[objectKey]));
+                if (_this.columns.indexOf(colName) !== -1 || _this.primaryKey === colName) {
+                    colsToSearch.push(colName + " = " + _this.connection.escape(criteria[objectKey]));
                 }
                 else {
-                    if (this.connection.table(colName) !== undefined) {
+                    if (_this.connection.table(colName) !== undefined) {
                         tablesToSearch.push(colName);
                     }
                     else {
@@ -223,7 +224,7 @@ var MysqlTable = (function () {
                     }
                 }
             }
-        }
+        });
         var whereParameterStr = "";
         if (colsToSearch.length > 0) {
             whereParameterStr = " WHERE " + colsToSearch.join(" AND ");
@@ -247,13 +248,12 @@ var MysqlTable = (function () {
                     tablesToSearch.forEach(function (_tableToSearch) {
                         var subCriteriaObjectPropertyname = MysqlUtil_1.default.toObjectProperty(_tableToSearch);
                         var subCriteria = criteria[subCriteriaObjectPropertyname];
-                        for (var subCriteriaKey in subCriteria) {
-                            //meta den einai '=' giauto to vgazw   if (subCriteria[subCriteriaKey] === EQUAL_TO_PROPERTY_SYMBOL) {
+                        MysqlUtil_1.default.forEachKey(subCriteria, function (subCriteriaKey) {
                             var resultColumnRowName = MysqlUtil_1.default.toRowProperty(subCriteriaKey);
                             if (result.hasOwnProperty(resultColumnRowName)) {
                                 subCriteria[subCriteriaKey] = result[resultColumnRowName];
                             }
-                        }
+                        });
                         //ws edw exoume
                         var subTable = _this.connection.table(_tableToSearch);
                         var subFindPromise = subTable.find2(subCriteria);
