@@ -11,7 +11,7 @@ var db = wrapper.wrap("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset
 //, "users", "user_infos", ["comments", "comment_likes"]); // second parameter for the tables you want to use ( default is all tables). OR->
 //db.useOnly/.useTables("users", "user_infos", ["comments", "comment_likes"]);// default is to use all tables., must be called before _W.ready().
 db.ready(function () {
-    db.table("users").find2({
+    db.table("users").find({
         yearsOld: 22,
         somethingElse: "something else",
         userInfos: { userId: '=' },

@@ -1,19 +1,23 @@
 ﻿//import {MysqlConnection, EventTypes} from "MysqlConnection";
 import MysqlConnection from "./MysqlConnection";
 import MysqlUtil from "./MysqlUtil";
+import {ICriteria,CriteriaBuilder} from "./CriteriaBuilder";
+
 import * as Promise from 'bluebird';
 export var EQUAL_TO_PROPERTY_SYMBOL = '=';
 
+//skopos tou find  edw tha einai ta criteria na min allazoun na min metatreponte, kai na epistrefonte mono new objects.
 class MysqlTable {
-    name: string;
-    connection: MysqlConnection;
+    private _name: string;
+    private _connection: MysqlConnection;
     private _columns: string[];
     private _primaryKey: string;
+    private _criteriaBuilder: CriteriaBuilder;
 
     constructor(tableName: string, connection: MysqlConnection) {
-        this.name = tableName;
-        this.connection = connection;
-             
+        this._name = tableName;
+        this._connection = connection;
+        this._criteriaBuilder = new CriteriaBuilder(this);
         //edw to forEach gia ta functions tou Model.an den ta valw ola sto table, logika 9a ginete.
     }
 
@@ -33,6 +37,13 @@ class MysqlTable {
         return this._primaryKey;
     }
 
+    get connection(): MysqlConnection {
+        return this._connection;
+    }
+
+    get name(): string {
+        return this._name;
+    }
 
     on(evtType: string, callback: (parsedResults: any[]) => void): void {
         this.connection.watch(this.name, evtType, callback);
@@ -55,7 +66,31 @@ class MysqlTable {
 
     }
 
-    toRow(jsObject: any): Array<any> {
+
+    objectFromRow(row: any): any {
+        let obj = {};
+        MysqlUtil.forEachKey(row, (key) => {
+            if (this.columns.indexOf(key) !== -1) {
+                obj[MysqlUtil.toObjectProperty(key)] = row[key];
+            } else {
+                obj[key] = row[key]; //for no db properties.
+            }
+        });
+        return obj;
+    }
+
+    rowFromObject(obj: any): any {
+        let row = {};
+        MysqlUtil.forEachKey(obj, (key) => {
+            let rowKey = MysqlUtil.toRowProperty(key);
+            if (this.columns.indexOf(rowKey) !== -1) {
+                row[rowKey] = obj[key];
+            }
+        });
+        return row;
+    }
+
+    getRowAsArray(jsObject: any): Array<any> {
         let _arr = new Array();
         let _columns = [];
         let _values = [];
@@ -160,33 +195,14 @@ class MysqlTable {
         });
     }
 
+   
     //toFind fernei to all, alla otan uparxoun '=' gamiete den ta fernei swsta prepei na to dw
-    find(jsObject: any, callback?: (_results: any[]) => any): Promise<any> {
-        return new Promise<any>((resolve, reject) => {
-            let colsToSearch = [];
-            let tablesToSearch = [];
-            let noDbProperties = [];
+    find(criteriaJsObject: any, callback?: (_results: any[]) => any): Promise<any[]> {
+        return new Promise<any[]>((resolve, reject) => {
 
-            MysqlUtil.forEachKey(jsObject, (objectKey) => {
-
-                let colName = MysqlUtil.toRowProperty(objectKey);
-
-                if (this.columns.indexOf(colName) !== -1 || this.primaryKey === colName) {
-                    colsToSearch.push(colName + " = " + this.connection.escape(jsObject[objectKey]));
-                } else {
-                    if (this.connection.table(colName) !== undefined) {
-                        tablesToSearch.push(colName);
-                    } else {
-                        noDbProperties.push(objectKey);
-                    }
-                }
-            });
-            let whereParameterStr = "";
-
-            if (colsToSearch.length > 0) {
-                whereParameterStr = " WHERE " + colsToSearch.join(" AND ");
-            }
-            let _query = ("SELECT * FROM " + this.name + whereParameterStr);
+            var criteria: ICriteria = this._criteriaBuilder.build(criteriaJsObject);
+         
+            let _query = ("SELECT * FROM " + this.name + criteria.whereClause);
 
             this.connection.query(_query, (err, results) => {
                 if (err || !results) {
@@ -199,19 +215,19 @@ class MysqlTable {
                     console.log('push parseResult from table: ' + this.name + ' from result: ');
                     console.dir(result);
                     console.log(' the jsobject: ');
-                    console.dir(jsObject);
-                    console.log('and tables to search: ' + tablesToSearch.toString());
-                    resultsPromises.push(this.parseQueryResult(jsObject, result, tablesToSearch));
+                    console.dir(criteriaJsObject);
+                    console.log('and tables to search: ' + criteria.tables.toString());
+                    resultsPromises.push(this.parseQueryResult(criteriaJsObject, result, criteria.tables));
 
                 });
 
                 Promise.all(resultsPromises).then((_objects: any[]) => {
                     //   console.log('finish? ');   //infinity loop...without reason lol
-                    if (noDbProperties.length > 0) {
+                    if (criteria.noDatabaseProperties.length > 0) {
                         [].forEach.call(_objects, (theObj: any) => {
 
-                            for (let pr = 0; pr < noDbProperties.length; pr++) {
-                                theObj[noDbProperties[pr]] = jsObject[noDbProperties[pr]];
+                            for (let pr = 0; pr < criteria.noDatabaseProperties.length; pr++) {
+                                theObj[criteria.noDatabaseProperties[pr]] = criteriaJsObject[criteria.noDatabaseProperties[pr]];
                             }
                         });
                     }
@@ -228,129 +244,137 @@ class MysqlTable {
         });
     }
 
-    findAll(callback?: (_results: any[]) => any): Promise<any> {
+    findById(id: any, callback?: (result: Object) => any): Promise<Object> {
+        return new Promise<Object>((resolve, reject) => {
+            let criteria = {};
+            criteria[this.primaryKey] = id;
+            this.find(criteria).then((results) => resolve(results[0])).catch((err: any) => reject(err));
+        });
+    }
+
+    findAll(callback?: (_results: any[]) => any): Promise<any[]> {
         return this.find({}, callback);
     }
 
-    find2(criteria: any, callback?: (_results: any[]) => any): Promise<any> {
-        /*criteria from users =   {
-        yearsOld: 22,
-        userInfos: { userId: '=' },
-        comments: {
-            userId: '=',
-            commentLikes: {
-                commentId: '=',
-                users: { userId: '=' }
-            }
-        }
-    }*/
-
-        let def = Promise.defer();
-
-        let colsToSearch = [];
-        let tablesToSearch = [];
-        let noDbProperties = [];
-        let manySelectQuery = "";
-        MysqlUtil.forEachKey(criteria, (objectKey) => {
-
-            if (criteria.hasOwnProperty(objectKey)) {
-                let colName = MysqlUtil.toRowProperty(objectKey);
-
-                if (this.columns.indexOf(colName) !== -1 || this.primaryKey === colName) { // add to query- where clause
-                    colsToSearch.push(colName + " = " + this.connection.escape(criteria[objectKey]));
-                } else { //if it's name is table's name,add to the tablesToSearch list for future use.
-                    if (this.connection.table(colName) !== undefined) {
-                        tablesToSearch.push(colName);
-                    } else { //not a table or a column? then add it to no database properties, these properties are passing to the results after all other operations have done.
-                        noDbProperties.push(objectKey);
-                    }
-                }
-            }
-        });
-
-        let whereParameterStr = "";
-
-        if (colsToSearch.length > 0) {
-            whereParameterStr = " WHERE " + colsToSearch.join(" AND ");
-        }
-
-        let _query = ("SELECT * FROM " + this.name + whereParameterStr);
-
-        this.connection.query(_query, (err, results) => {
-            if (err || !results) {
-                def.reject(err);
-                return;
-            }
-
-            //edw exoume to users list logika.
-
-            results.forEach((result) => {
-                let _obj = {};
-                if (noDbProperties.length > 0) {
-                    for (let i = 0; i < noDbProperties.length; i++) {
-                        result[noDbProperties[i]] = criteria[noDbProperties[i]];
-                    }
-                }
-                if (tablesToSearch.length > 0) {
-                    let otherFindPromises = [];
-                    tablesToSearch.forEach((_tableToSearch: string) => {
-                        let subCriteriaObjectPropertyname = MysqlUtil.toObjectProperty(_tableToSearch);
-                        let subCriteria = criteria[subCriteriaObjectPropertyname];
-                        MysqlUtil.forEachKey(subCriteria, (subCriteriaKey) => {
-                            let resultColumnRowName = MysqlUtil.toRowProperty(subCriteriaKey);
-                            if (result.hasOwnProperty(resultColumnRowName)) {
-                                subCriteria[subCriteriaKey] = result[resultColumnRowName];
-                            }
-                        }); 
-                        //ws edw exoume
-                        let subTable = this.connection.table(_tableToSearch);
-                        let subFindPromise = subTable.find2(subCriteria);
-                        otherFindPromises.push(subFindPromise);
-                        subFindPromise.then((_subResults) => {
-                            result[subCriteriaObjectPropertyname] = _subResults;
-
-                        });
-                        //   console.dir(subCriteria);
-                        //    console.log(" inside " + subTable.name);
-
-                    });
-
-                    Promise.all(otherFindPromises).then((allFindResults: any[]) => {
-                        console.dir(result);
-                        if (callback) {
-                            callback(result);
-                        }
-
-                        def.resolve(result);
-                    });
-                } else {
-                    if (callback) {
-                        callback(results);
-                    }
-
-                    def.resolve(results);
-                }
-
-
-
-            });
-
-
-        });
-
-
-
-
-        return def.promise;
-    }
-
+    /*   find2(criteria: any, callback?: (_results: any[]) => any): Promise<any[]> {
+           /*criteria from users =   {
+           yearsOld: 22,
+           userInfos: { userId: '=' },
+           comments: {
+               userId: '=',
+               commentLikes: {
+                   commentId: '=',
+                   users: { userId: '=' }
+               }
+           }
+       }
+   
+           let def = Promise.defer();
+   
+           let colsToSearch = [];
+           let tablesToSearch = [];
+           let noDbProperties = [];
+           let manySelectQuery = "";
+           MysqlUtil.forEachKey(criteria, (objectKey) => {
+   
+               if (criteria.hasOwnProperty(objectKey)) {
+                   let colName = MysqlUtil.toRowProperty(objectKey);
+   
+                   if (this.columns.indexOf(colName) !== -1 || this.primaryKey === colName) { // add to query- where clause
+                       colsToSearch.push(colName + " = " + this.connection.escape(criteria[objectKey]));
+                   } else { //if it's name is table's name,add to the tablesToSearch list for future use.
+                       if (this.connection.table(colName) !== undefined) {
+                           tablesToSearch.push(colName);
+                       } else { //not a table or a column? then add it to no database properties, these properties are passing to the results after all other operations have done.
+                           noDbProperties.push(objectKey);
+                       }
+                   }
+               }
+           });
+   
+           let whereParameterStr = "";
+   
+           if (colsToSearch.length > 0) {
+               whereParameterStr = " WHERE " + colsToSearch.join(" AND ");
+           }
+   
+           let _query = ("SELECT * FROM " + this.name + whereParameterStr);
+   
+           this.connection.query(_query, (err, results) => {
+               if (err || !results) {
+                   def.reject(err);
+                   return;
+               }
+   
+               //edw exoume to users list logika.
+   
+               results.forEach((result) => {
+                   let _obj = {};
+                   if (noDbProperties.length > 0) {
+                       for (let i = 0; i < noDbProperties.length; i++) {
+                           result[noDbProperties[i]] = criteria[noDbProperties[i]];
+                       }
+                   }
+                   if (tablesToSearch.length > 0) {
+                       let otherFindPromises = [];
+                       tablesToSearch.forEach((_tableToSearch: string) => {
+                           let subCriteriaObjectPropertyname = MysqlUtil.toObjectProperty(_tableToSearch);
+                           let subCriteria = criteria[subCriteriaObjectPropertyname];
+                           MysqlUtil.forEachKey(subCriteria, (subCriteriaKey) => {
+                               let resultColumnRowName = MysqlUtil.toRowProperty(subCriteriaKey);
+                               if (result.hasOwnProperty(resultColumnRowName)) {
+                                   subCriteria[subCriteriaKey] = result[resultColumnRowName];
+                               }
+                           }); 
+                           //ws edw exoume
+                           let subTable = this.connection.table(_tableToSearch);
+                           let subFindPromise = subTable.find2(subCriteria);
+                           otherFindPromises.push(subFindPromise);
+                           subFindPromise.then((_subResults) => {
+                               result[subCriteriaObjectPropertyname] = _subResults;
+   
+                           });
+                           //   console.dir(subCriteria);
+                           //    console.log(" inside " + subTable.name);
+   
+                       });
+   
+                       Promise.all(otherFindPromises).then((allFindResults: any[]) => {
+                           console.dir(result);
+                           if (callback) {
+                               callback(result);
+                           }
+   
+                           def.resolve(result);
+                       });
+                   } else {
+                       if (callback) {
+                           callback(results);
+                       }
+   
+                       def.resolve(results);
+                   }
+   
+   
+   
+               });
+   
+   
+           });
+   
+   
+   
+   
+           return def.promise;
+       }
+      */
     save(jsObject: any, callback?: (_result: any) => any): Promise<any> {
         //sta arguments borw na perniounte ta values me tin seira, ton properties pou exei to model-jsObject
         return new Promise<any>((resolve, reject) => {
             let primaryKeyValue = this.getPrimaryKeyValue(jsObject);
 
-            //14-08-2015 always run toRow before save.  if (this.columns.length === 0 || this.values.length === 0) {
-            let arr = this.toRow(jsObject);
+            //14-08-2015 always run getRowAsArray before save.  if (this.columns.length === 0 || this.values.length === 0) {
+            let arr = this.getRowAsArray(jsObject);
             let objectColumns = arr[0]; // = columns , 1= values
             let objectValues = arr[1];
             //   }
@@ -401,10 +425,10 @@ class MysqlTable {
         });
     }
 
-    safeRemove(jsObject: any, callback?: (_result: any) => any): Promise<any> {
-        return new Promise<any>((resolve, reject) => {
+    safeRemove(criteria: any, callback?: (_result: { affectedRows; table }) => any): Promise<{ affectedRows; table }> {
+        return new Promise<{ affectedRows; table }>((resolve, reject) => {
 
-            let primaryKeyValue = this.getPrimaryKeyValue(jsObject);
+            let primaryKeyValue = this.getPrimaryKeyValue(criteria);
             if (primaryKeyValue <= 0) {
                 reject('Primary Key is missing!');
             }
@@ -415,22 +439,23 @@ class MysqlTable {
                     // console.dir(err);
                     reject(err);
                 }
-                jsObject.affectedRows = result.affectedRows;
-                this.connection.notice(this.name, _query, jsObject);
-                resolve(jsObject);
+                let _objReturned = { affectedRows: result.affectedRows, table: this.name };
+
+                this.connection.notice(this.name, _query, [_objReturned]);
+                resolve(_objReturned);
                 if (callback) {
-                    callback(jsObject); //an kai kanonika auto to kanei mono t
+                    callback(_objReturned); //an kai kanonika auto to kanei mono t
                 }
             });
 
         });
     }
 
-    remove(jsObject: any, callback?: (_result: any) => any): Promise<any> {
-        return new Promise<any>((resolve, reject) => {
-            let primaryKeyValue = this.getPrimaryKeyValue(jsObject);
+    remove(criteria: any, callback?: (_result: { affectedRows; table }) => any): Promise<{ affectedRows; table }> {
+        return new Promise<{ affectedRows; table }>((resolve, reject) => {
+            let primaryKeyValue = this.getPrimaryKeyValue(criteria);
             if (!primaryKeyValue || primaryKeyValue <= 0) {
-                let arr = this.toRow(jsObject);
+                let arr = this.getRowAsArray(criteria);
                 let objectValues = arr[1];
                 let colummnsAndValues = [];
                 for (let i = 0; i < colummnsAndValues.length; i++) {
@@ -446,16 +471,17 @@ class MysqlTable {
                         //console.dir(err);
                         reject(err);
                     }
-                    jsObject.affectedRows = result.affectedRows;
-                    this.connection.notice(this.name, _query, jsObject);
-                    resolve(jsObject);
+                    let _objReturned = { affectedRows: result.affectedRows, table: this.name };
+
+                    this.connection.notice(this.name, _query, [_objReturned]);
+                    resolve(_objReturned);
                     if (callback) {
-                        callback(jsObject);  //an kai kanonika auto to kanei mono t
+                        callback(_objReturned);  //an kai kanonika auto to kanei mono t
                     }
                 });
             } else {
                 // return this.safeRemove(jsObject);
-                this.safeRemove(jsObject).then((_res: any) => {
+                this.safeRemove(criteria).then((_res) => {
                     resolve(_res);
                 });
             }

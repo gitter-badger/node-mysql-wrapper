@@ -42,6 +42,7 @@
     <Content Include="README.md" />
     <TypeScriptCompile Include="example\server.ts" />
     <TypeScriptCompile Include="index.ts" />
+    <TypeScriptCompile Include="lib\CriteriaBuilder.ts" />
     <TypeScriptCompile Include="lib\MysqlConnection.ts" />
     <TypeScriptCompile Include="lib\MysqlTable.ts" />
     <TypeScriptCompile Include="lib\MysqlUtil.ts" />

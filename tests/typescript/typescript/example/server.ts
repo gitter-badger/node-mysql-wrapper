@@ -16,7 +16,7 @@ var db = wrapper.wrap("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset
 //db.useOnly/.useTables("users", "user_infos", ["comments", "comment_likes"]);// default is to use all tables., must be called before _W.ready().
 db.ready(() => { //makes the connect or the link from prev connection and then call the function when it's ready. In here you can load your modules that inherites the wrapper.
 
-    db.table("users").find2({
+    db.table("users").find({
         yearsOld: 22,
         somethingElse:"something else",
         userInfos: { userId: '=' },
