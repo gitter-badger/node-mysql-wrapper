@@ -7,6 +7,7 @@ import * as Promise from 'bluebird';
 import {EventEmitter} from 'events';
 
 import MysqlTable from "./MysqlTable";
+import MysqlUtil from "./MysqlUtil";
 /* prostoparwn den xrisimopoiounte , akoma tlxstn
 export enum EventTypes {
     Insert, Update, Remove, Save
@@ -215,7 +216,7 @@ class MysqlConnection {
 
     table(tableName: string): MysqlTable {
         for (let i = 0; i < this.tables.length; i++) {
-            if (this.tables[i].name === tableName) {
+            if (this.tables[i].name === tableName || this.tables[i].name === MysqlUtil.toObjectProperty(tableName)) {
 
                 return this.tables[i];
             }

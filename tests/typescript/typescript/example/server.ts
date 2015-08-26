@@ -16,6 +16,35 @@ var db = wrapper.wrap("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset
 //db.useOnly/.useTables("users", "user_infos", ["comments", "comment_likes"]);// default is to use all tables., must be called before _W.ready().
 db.ready(() => { //makes the connect or the link from prev connection and then call the function when it's ready. In here you can load your modules that inherites the wrapper.
 
+
+    db.table("users").find({
+        yearsOld: 22,
+        somethingElse: "something else",
+        userInfos: { userId: '=' },
+        comments: {
+            userId: '=',
+            commentLikes: {
+                commentId: '=',
+                users: { userId: '=' }
+            }
+        }
+    }).then((results) => {
+        console.log('FINISH FIND ON USERS');
+        console.dir(results);
+
+        results.forEach((result) => {
+            if(result.userInfos.length>0)
+                console.log('hometown: ' + result.userInfos[0].hometown + ' with infoID: ' + result.userInfos[0].userInfoId);
+            if (result.comments.length > 0)
+                result.comments.forEach(comment => {
+                    console.log(comment.commentId + ' with content: ' + comment.content);
+                    if (comment.commentLikes.length > 0)
+                        console.log(' with ' + comment.commentLikes.length + ' likes');
+                });
+        });
+
+    });
+    /*
     db.table("users").find({
         yearsOld: 22,
         somethingElse:"something else",
@@ -30,7 +59,7 @@ db.ready(() => { //makes the connect or the link from prev connection and then c
     }, (_results) => {
         console.log('FINISH FIND2 ON USERS');
 
-    });
+    });     */
     /*  db.table("comments").findAll((results) => {   // or db["comments"]...
         console.log(' found ' + results.length + ' [all] comments ');
         console.dir(results);

@@ -1,12 +1,10 @@
-﻿//import {MysqlConnection, EventTypes} from "MysqlConnection";
-import MysqlConnection from "./MysqlConnection";
+﻿import MysqlConnection from "./MysqlConnection";
 import MysqlUtil from "./MysqlUtil";
-import {ICriteria,CriteriaBuilder} from "./CriteriaBuilder";
+import {ICriteria, CriteriaBuilder} from "./CriteriaBuilder";
 
 import * as Promise from 'bluebird';
 export var EQUAL_TO_PROPERTY_SYMBOL = '=';
 
-//skopos tou find  edw tha einai ta criteria na min allazoun na min metatreponte, kai na epistrefonte mono new objects.
 class MysqlTable {
     private _name: string;
     private _connection: MysqlConnection;
@@ -18,7 +16,6 @@ class MysqlTable {
         this._name = tableName;
         this._connection = connection;
         this._criteriaBuilder = new CriteriaBuilder(this);
-        //edw to forEach gia ta functions tou Model.an den ta valw ola sto table, logika 9a ginete.
     }
 
     set columns(cols: string[]) {
@@ -66,11 +63,10 @@ class MysqlTable {
 
     }
 
-
     objectFromRow(row: any): any {
         let obj = {};
         MysqlUtil.forEachKey(row, (key) => {
-            if (this.columns.indexOf(key) !== -1) {
+            if (this.columns.indexOf(key) !== -1 || this.primaryKey === key) {
                 obj[MysqlUtil.toObjectProperty(key)] = row[key];
             } else {
                 obj[key] = row[key]; //for no db properties.
@@ -83,7 +79,7 @@ class MysqlTable {
         let row = {};
         MysqlUtil.forEachKey(obj, (key) => {
             let rowKey = MysqlUtil.toRowProperty(key);
-            if (this.columns.indexOf(rowKey) !== -1) {
+            if (this.columns.indexOf(rowKey) !== -1 || this.primaryKey === rowKey) {
                 row[rowKey] = obj[key];
             }
         });
@@ -114,7 +110,7 @@ class MysqlTable {
 
     }
 
-    getPrimaryKeyValue(jsObject): string|number {
+    getPrimaryKeyValue(jsObject): number|string {
         var returnValue: string|number = 0;
         var primaryKeyObjectProperty = MysqlUtil.toObjectProperty(this.primaryKey);
         if (jsObject) {
@@ -134,117 +130,78 @@ class MysqlTable {
         return returnValue;
     }
 
-    putTablePropertyFrom(mysqlTableToSearch: string, parentObj: any): Promise<void> {
-        return new Promise<void>((resolve, reject) => {
+    parseQueryResult(result: any, criteria: ICriteria): Promise<any> {
+        return new Promise((resolve, reject) => {
+            var obj = this.objectFromRow(result);
+            if (criteria.tables.length > 0) {
+                var tableFindPromiseList = [];
+                //tables to search
+                criteria.tables.forEach((tableName) => {
+                    var table = this.connection.table(tableName);
+                    var tablePropertyName = MysqlUtil.toObjectProperty(tableName);
+                    var criteriaJsObject = MysqlUtil.copyObject(criteria.rawCriteriaObject[tablePropertyName]);
+                    MysqlUtil.forEachKey(criteriaJsObject, (propertyName) => {
+                        if (criteriaJsObject[propertyName] === EQUAL_TO_PROPERTY_SYMBOL) {
+                            criteriaJsObject[propertyName] = result[MysqlUtil.toRowProperty(propertyName)];
+                        }
+                    });
+                    var tableFindPromise = table.find(criteriaJsObject);
 
-            let tableProperty = MysqlUtil.toObjectProperty(mysqlTableToSearch);
-            let tablePropertyObj = parentObj[tableProperty];
-            MysqlUtil.forEachKey(tablePropertyObj, (key) => {
-                let _val = tablePropertyObj[key];
+                    tableFindPromise.then((childResults) => {
+                        obj[tablePropertyName] = [];
 
-                if (_val === EQUAL_TO_PROPERTY_SYMBOL) {
-                    // console.log(key + " is equal to " + parentObj[key]);
-                    tablePropertyObj[key] = parentObj[key];
-                }
+                        childResults.forEach((childResult) => {
+                            obj[tablePropertyName].push(this.objectFromRow(childResult));
 
-            });
+                        });
+                    });
+                    tableFindPromiseList.push(tableFindPromise);
 
-            this.connection.table(mysqlTableToSearch).find(tablePropertyObj, (results: any[]) => {
-                parentObj[tableProperty] = results;
-                resolve();
-            });
+                });
 
-        });
-    }
+                Promise.all(tableFindPromiseList).then(() => {
+                    resolve(obj);
+                });
 
-    parseQueryResult(jsObject: any, result: any, tablesToSearch: string[]): Promise<any> {
-        return new Promise<any>((resolve, reject) => {
-            let _obj = {};
-            MysqlUtil.forEachKey(result, (key) => {
-                let propertyObjKey = MysqlUtil.toObjectProperty(key);
-                _obj[propertyObjKey] = result[key];
-            });
-
-            if (tablesToSearch.length === 0) {
-                // console.dir(_obj);
-                resolve(_obj);
             } else {
-                // console.dir(_obj); //ews ewd kala paei
-                let promisesList = [];
-
-                [].forEach.call(tablesToSearch, (tableToSearch: string) => {
-                    //apo edw kai pera den teleiwnei pote i fasi ....
-
-                    let tableToSearchProp = MysqlUtil.toObjectProperty(tableToSearch);
-
-                    _obj[tableToSearchProp] = jsObject[tableToSearchProp];
-
-                    //  console.dir(_obj);
-                    //edw to obj ginete o,ti nane ...na to dw
-                    promisesList.push(this.putTablePropertyFrom(tableToSearch, _obj));
-                });
-                //console.log(promisesList.length);    //edw sunexeia dixnei... den stamataei pote.
-                Promise.all(promisesList).then((_val: any[]) => {
-
-                    resolve(_obj);
-                }).catch((err: any) => {
-                    reject("Error when parsing the object from table.");
-                });
+                resolve(obj);
             }
 
         });
     }
 
-   
-    //toFind fernei to all, alla otan uparxoun '=' gamiete den ta fernei swsta prepei na to dw
-    find(criteriaJsObject: any, callback?: (_results: any[]) => any): Promise<any[]> {
+    find(criteriaRawJsObject: any, callback?: (_results: any[]) => any): Promise<any[]> {
         return new Promise<any[]>((resolve, reject) => {
 
-            var criteria: ICriteria = this._criteriaBuilder.build(criteriaJsObject);
-         
-            let _query = ("SELECT * FROM " + this.name + criteria.whereClause);
+            var criteria = this._criteriaBuilder.build(criteriaRawJsObject);
 
-            this.connection.query(_query, (err, results) => {
-                if (err || !results) {
-                    reject(err);
+            var query = "SELECT * FROM " + this.name + criteria.whereClause;
+
+            this.connection.query(query, (error, results: any[]) => {
+                if (error || !results) {
+                    reject(error + ' Error. On find');
                 }
-                console.log(_query);
-                let resultsPromises = [];
-                //   console.dir(results);    //infinity loop...without reason lol
-                [].forEach.call(results, (result) => {
-                    console.log('push parseResult from table: ' + this.name + ' from result: ');
-                    console.dir(result);
-                    console.log(' the jsobject: ');
-                    console.dir(criteriaJsObject);
-                    console.log('and tables to search: ' + criteria.tables.toString());
-                    resultsPromises.push(this.parseQueryResult(criteriaJsObject, result, criteria.tables));
+                var parseQueryResultsPromises = [];
+
+                results.forEach((result) => {
+                    parseQueryResultsPromises.push(this.parseQueryResult(result, criteria));
 
                 });
 
-                Promise.all(resultsPromises).then((_objects: any[]) => {
-                    //   console.log('finish? ');   //infinity loop...without reason lol
-                    if (criteria.noDatabaseProperties.length > 0) {
-                        [].forEach.call(_objects, (theObj: any) => {
-
-                            for (let pr = 0; pr < criteria.noDatabaseProperties.length; pr++) {
-                                theObj[criteria.noDatabaseProperties[pr]] = criteriaJsObject[criteria.noDatabaseProperties[pr]];
-                            }
-                        });
-                    }
-                    //console.dir(_objects);
+                Promise.all(parseQueryResultsPromises).then((_objects: any[]) => {
+                    resolve(_objects);
                     if (callback) {
                         callback(_objects);
                     }
-
-                    resolve(_objects);
                 });
 
             });
 
+
         });
     }
 
-    findById(id: any, callback?: (result: Object) => any): Promise<Object> {
+    findById(id: number|string, callback?: (result: Object) => any): Promise<Object> {
         return new Promise<Object>((resolve, reject) => {
             let criteria = {};
             criteria[this.primaryKey] = id;
@@ -256,125 +213,13 @@ class MysqlTable {
         return this.find({}, callback);
     }
 
-    /*   find2(criteria: any, callback?: (_results: any[]) => any): Promise<any[]> {
-           /*criteria from users =   {
-           yearsOld: 22,
-           userInfos: { userId: '=' },
-           comments: {
-               userId: '=',
-               commentLikes: {
-                   commentId: '=',
-                   users: { userId: '=' }
-               }
-           }
-       }
-   
-           let def = Promise.defer();
-   
-           let colsToSearch = [];
-           let tablesToSearch = [];
-           let noDbProperties = [];
-           let manySelectQuery = "";
-           MysqlUtil.forEachKey(criteria, (objectKey) => {
-   
-               if (criteria.hasOwnProperty(objectKey)) {
-                   let colName = MysqlUtil.toRowProperty(objectKey);
-   
-                   if (this.columns.indexOf(colName) !== -1 || this.primaryKey === colName) { // add to query- where clause
-                       colsToSearch.push(colName + " = " + this.connection.escape(criteria[objectKey]));
-                   } else { //if it's name is table's name,add to the tablesToSearch list for future use.
-                       if (this.connection.table(colName) !== undefined) {
-                           tablesToSearch.push(colName);
-                       } else { //not a table or a column? then add it to no database properties, these properties are passing to the results after all other operations have done.
-                           noDbProperties.push(objectKey);
-                       }
-                   }
-               }
-           });
-   
-           let whereParameterStr = "";
-   
-           if (colsToSearch.length > 0) {
-               whereParameterStr = " WHERE " + colsToSearch.join(" AND ");
-           }
-   
-           let _query = ("SELECT * FROM " + this.name + whereParameterStr);
-   
-           this.connection.query(_query, (err, results) => {
-               if (err || !results) {
-                   def.reject(err);
-                   return;
-               }
-   
-               //edw exoume to users list logika.
-   
-               results.forEach((result) => {
-                   let _obj = {};
-                   if (noDbProperties.length > 0) {
-                       for (let i = 0; i < noDbProperties.length; i++) {
-                           result[noDbProperties[i]] = criteria[noDbProperties[i]];
-                       }
-                   }
-                   if (tablesToSearch.length > 0) {
-                       let otherFindPromises = [];
-                       tablesToSearch.forEach((_tableToSearch: string) => {
-                           let subCriteriaObjectPropertyname = MysqlUtil.toObjectProperty(_tableToSearch);
-                           let subCriteria = criteria[subCriteriaObjectPropertyname];
-                           MysqlUtil.forEachKey(subCriteria, (subCriteriaKey) => {
-                               let resultColumnRowName = MysqlUtil.toRowProperty(subCriteriaKey);
-                               if (result.hasOwnProperty(resultColumnRowName)) {
-                                   subCriteria[subCriteriaKey] = result[resultColumnRowName];
-                               }
-                           }); 
-                           //ws edw exoume
-                           let subTable = this.connection.table(_tableToSearch);
-                           let subFindPromise = subTable.find2(subCriteria);
-                           otherFindPromises.push(subFindPromise);
-                           subFindPromise.then((_subResults) => {
-                               result[subCriteriaObjectPropertyname] = _subResults;
-   
-                           });
-                           //   console.dir(subCriteria);
-                           //    console.log(" inside " + subTable.name);
-   
-                       });
-   
-                       Promise.all(otherFindPromises).then((allFindResults: any[]) => {
-                           console.dir(result);
-                           if (callback) {
-                               callback(result);
-                           }
-   
-                           def.resolve(result);
-                       });
-                   } else {
-                       if (callback) {
-                           callback(results);
-                       }
-   
-                       def.resolve(results);
-                   }
-   
-   
-   
-               });
-   
-   
-           });
-   
-   
-   
-   
-           return def.promise;
-       }
-      */
-    save(jsObject: any, callback?: (_result: any) => any): Promise<any> {
+    save(criteriaRawJsObject: any, callback?: (_result: any) => any): Promise<any> {
         //sta arguments borw na perniounte ta values me tin seira, ton properties pou exei to model-jsObject
         return new Promise<any>((resolve, reject) => {
-            let primaryKeyValue = this.getPrimaryKeyValue(jsObject);
+            let primaryKeyValue = this.getPrimaryKeyValue(criteriaRawJsObject);
 
             //14-08-2015 always run getRowAsArray before save.  if (this.columns.length === 0 || this.values.length === 0) {
-            let arr = this.getRowAsArray(jsObject);
+            let arr = this.getRowAsArray(criteriaRawJsObject);
             let objectColumns = arr[0]; // = columns , 1= values
             let objectValues = arr[1];
             //   }
@@ -393,10 +238,10 @@ class MysqlTable {
                         reject(err);
 
                     }
-                    this.connection.notice(this.name, _query, jsObject);
-                    resolve(jsObject);
+                    this.connection.notice(this.name, _query, criteriaRawJsObject);
+                    resolve(criteriaRawJsObject);
                     if (callback) {
-                        callback(jsObject); //an kai kanonika auto to kanei mono t
+                        callback(criteriaRawJsObject); //an kai kanonika auto to kanei mono t
                     }
                 });
 
@@ -410,13 +255,15 @@ class MysqlTable {
                     // jsObject[this.primaryKey] = result.insertId;
 
                     var primaryKeyJsObjectProperty = MysqlUtil.toObjectProperty(this.primaryKey);
-                    jsObject[primaryKeyJsObjectProperty] = result.insertId;
+                    var obj = this.objectFromRow(criteriaRawJsObject);
+                    obj[primaryKeyJsObjectProperty] = result.insertId;
+                    //criteriaRawJsObject[primaryKeyJsObjectProperty] = result.insertId;
                     primaryKeyValue = result.insertId;
 
-                    this.connection.notice(this.name, _query, jsObject);
-                    resolve(jsObject);
+                    this.connection.notice(this.name, _query, obj);
+                    resolve(obj);
                     if (callback) {
-                        callback(jsObject);
+                        callback(obj);
                     }
 
 
@@ -425,10 +272,10 @@ class MysqlTable {
         });
     }
 
-    safeRemove(criteria: any, callback?: (_result: { affectedRows; table }) => any): Promise<{ affectedRows; table }> {
+    safeRemove(criteriaRawJsObject: any, callback?: (_result: { affectedRows; table }) => any): Promise<{ affectedRows; table }> {
         return new Promise<{ affectedRows; table }>((resolve, reject) => {
 
-            let primaryKeyValue = this.getPrimaryKeyValue(criteria);
+            let primaryKeyValue = this.getPrimaryKeyValue(criteriaRawJsObject);
             if (primaryKeyValue <= 0) {
                 reject('Primary Key is missing!');
             }
@@ -451,11 +298,11 @@ class MysqlTable {
         });
     }
 
-    remove(criteria: any, callback?: (_result: { affectedRows; table }) => any): Promise<{ affectedRows; table }> {
+    remove(criteriaRawJsObject: any, callback?: (_result: { affectedRows; table }) => any): Promise<{ affectedRows; table }> {
         return new Promise<{ affectedRows; table }>((resolve, reject) => {
-            let primaryKeyValue = this.getPrimaryKeyValue(criteria);
+            let primaryKeyValue = this.getPrimaryKeyValue(criteriaRawJsObject);
             if (!primaryKeyValue || primaryKeyValue <= 0) {
-                let arr = this.getRowAsArray(criteria);
+                let arr = this.getRowAsArray(criteriaRawJsObject);
                 let objectValues = arr[1];
                 let colummnsAndValues = [];
                 for (let i = 0; i < colummnsAndValues.length; i++) {
@@ -481,12 +328,13 @@ class MysqlTable {
                 });
             } else {
                 // return this.safeRemove(jsObject);
-                this.safeRemove(criteria).then((_res) => {
+                this.safeRemove(criteriaRawJsObject).then((_res) => {
                     resolve(_res);
                 });
             }
         });
     }
+
 
 }
 
