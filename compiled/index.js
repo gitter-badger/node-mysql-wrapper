@@ -1,4 +1,4 @@
-﻿/* 19-08-2015: telika auto to project 9a einai akrivws to idio sintaktika kai me tis klaseis tou node-mysql-wrapper apla se typescript
+/* 19-08-2015: telika auto to project 9a einai akrivws to idio sintaktika kai me tis klaseis tou node-mysql-wrapper apla se typescript
 otan teleiwsw auto to project tote 9a kanw kai mia library gia tous typescript developersk ai gia ta alla melontika mou project
 to opoio 9a legete mysql-db, kai 9a doulevei me annotation, opws eixa kanei se C# kai se Java tis proigoumenes vivliothikes.
 
@@ -48,48 +48,25 @@ userTable.find(userToFind,()=>{  //or promise
   //or: user userToFind = await userTable.find({userId:18});
 });
 */
-
-/*
-already supported:
-
-Destructuring
-
-  var topic = {name:'ECMAScript 6',
-    comment: 'Next version of JavaScript',
-    browserStatus: {
-        chrome: 'partial',
-        opera:'partial',
-        ie: 'very less',
-        ieTechPreview: 'partial'
-    }};
-
-var {name, browserStatus:{opera}} = topic;  //name: 'ECMAScript 6', opera: 'partial
-
-*/
-
-
-import MysqlConnection from "./lib/MysqlConnection";
-import MysqlWrapper from "./lib/MysqlWrapper";
-import * as Mysql from "mysql";
-
+var MysqlConnection_1 = require("./lib/MysqlConnection");
+var MysqlWrapper_1 = require("./lib/MysqlWrapper");
 if (Function.prototype["name"] === undefined) {
-    //works only for function something() {}; no for var something = function(){}
-    // Add a custom property to all function values
-    // that actually invokes a method to get the value
     Object.defineProperty(Function.prototype, 'name', {
-        get: function() {
+        get: function () {
             return /function ([^(]*)/.exec(this + "")[1];
         }
     });
 }
-
-export  function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection: Mysql.IConnection |  string, ...useTables: any[]): MysqlWrapper {
-    let mysqlCon = new MysqlConnection(mysqlUrlOrObjectOrMysqlAlreadyConnection);
-    let mysqlWrapper = new MysqlWrapper(mysqlCon);
-
+function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection) {
+    var useTables = [];
+    for (var _i = 1; _i < arguments.length; _i++) {
+        useTables[_i - 1] = arguments[_i];
+    }
+    var mysqlCon = new MysqlConnection_1.default(mysqlUrlOrObjectOrMysqlAlreadyConnection);
+    var mysqlWrapper = new MysqlWrapper_1.default(mysqlCon);
     if (useTables) {
         mysqlWrapper.useOnly(useTables);
     }
-
     return mysqlWrapper;
 }
+exports.wrap = wrap;

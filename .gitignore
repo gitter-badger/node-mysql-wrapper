@@ -3,7 +3,10 @@ obj
 .git
 .settings
 node-mysql-wrapper.njsproj
+v1.node-mysql-wrapper.njsproj
+.vs/*
 .ntvs_analysis.dat
+/tests/*
 /tests/typescript/.vs
 /tests/*.dll
 /tests/*/*.sln
