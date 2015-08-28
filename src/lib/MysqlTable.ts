@@ -275,8 +275,8 @@ class MysqlTable {
 	
 	  
 	  
-	   safeRemove(id: number|string, callback?: (_result: { affectedRows; table }) => any): Promise<{ affectedRows; table }> {
-        return new Promise<{ affectedRows; table }>((resolve, reject) => {
+	   safeRemove(id: number|string, callback?: (_result: { affectedRows:number; table:string }) => any): Promise<{ affectedRows:number; table:string }> {
+        return new Promise<{ affectedRows:number; table:string }>((resolve, reject) => {
 
 
             let _query = "DELETE FROM " + this.name + " WHERE " + this.primaryKey + " = " + id;
@@ -323,8 +323,8 @@ class MysqlTable {
         });
     }*/
 
-    remove(criteriaRawJsObject: any, callback?: (_result: { affectedRows; table }) => any): Promise<{ affectedRows; table }> {
-        return new Promise<{ affectedRows; table }>((resolve, reject) => {
+    remove(criteriaRawJsObject: any, callback?: (_result: { affectedRows:number; table:string }) => any): Promise<{ affectedRows:number; table:string }> {
+        return new Promise<{ affectedRows:number; table:string }>((resolve, reject) => {
             let primaryKeyValue = this.getPrimaryKeyValue(criteriaRawJsObject);
             if (!primaryKeyValue || primaryKeyValue <= 0) {
                 let arr = this.getRowAsArray(criteriaRawJsObject);
