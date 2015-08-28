@@ -1,6 +1,6 @@
 {
   "name": "node-mysql-wrapper",
-  "version": "2.0.3",
+  "version": "2.0.5",
   "description": "This is a node js module, written in TypeScript (module is compiled to JavaScript), which manages mysql (node-mysql) connection and models in a way that you expected!",
   "main": "./compiled/index.js",
   "scripts": {
@@ -19,6 +19,11 @@
     "node-mysql",
     "mysql",
     "mysql-wrapper"
+  ],
+  "files":[
+    "LICENSE",
+    "README.md",
+    "compiled/"   
   ],
   "author": "Makis Maropoulos <makis@ideopod.com> (https://github.com/kataras)",
   "license": "GPL-3.0",

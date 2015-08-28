@@ -1,5 +1,5 @@
-﻿/// <reference path="./../typings/mysql/mysql.d.ts"/>
-/// <reference path="./../typings/bluebird/bluebird.d.ts"/> 
+﻿/// <reference path="../typings/mysql/mysql.d.ts"/>
+/// <reference path="../typings/bluebird/bluebird.d.ts"/> 
 /// <reference path="./MysqlTable.ts"/> 
 import * as Mysql from 'mysql';
 import * as Util from 'util';
@@ -8,11 +8,6 @@ import {EventEmitter} from 'events';
 
 import MysqlTable from "./MysqlTable";
 import MysqlUtil from "./MysqlUtil";
-/* prostoparwn den xrisimopoiounte , akoma tlxstn
-export enum EventTypes {
-    Insert, Update, Remove, Save
-
-}*/
 
 class MysqlConnection {
     connection: Mysql.IConnection;
@@ -103,50 +98,53 @@ class MysqlConnection {
         return new Promise<void>((resolve, reject) => {
             //ta results pou 9eloume einai panta ta: results[0]. 
             this.connection.query("SELECT DISTINCT TABLE_NAME ,column_name FROM INFORMATION_SCHEMA.key_column_usage WHERE TABLE_SCHEMA IN ('" + this.connection.config.database + "');",
-            (err: Mysql.IError, ...results: any[]) => {
-                if (err) {
-                    reject(err);
-                }
-                [].forEach.call(results[0], (tableObj, currentPosition) => {
-                    //.log(tableObj.TABLE_NAME);
-                    if (this.tableNamesToUseOnly.length > 0 && this.tableNamesToUseOnly.indexOf(tableObj.TABLE_NAME) !== -1) {
-                        //means that only to use called, and this table is not in this collection, so don't fetch it.
-
-                    } else {
-                        let _table = new MysqlTable(tableObj.TABLE_NAME, this);
-                        _table.primaryKey = (tableObj.column_name);
-
-                        this.connection.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + this.connection.config.database + "' AND TABLE_NAME = '" + _table.name + "';", (errC: Mysql.IError, ...resultsC: any[]) => {
-                            if (errC) {
-                                reject(err);
-                            }
-
-                            let _tableColumns = [];
-
-                            for (let i = 0; i < resultsC[0].length; i++) {
-
-                                let _columnName = resultsC[0][i]['COLUMN_NAME']; //.COLUMN_NAME
-                                if (_columnName !== _table.primaryKey) {
-                                    _tableColumns.push(_columnName);
-                                }
-                            }
-
-                            _table.columns = (_tableColumns);
-                            this.tables.push(_table);
-                            //console.log('pushing ' + _table.name + ' with primary: ' + _table.primaryKey + ' and columns: ');
-                            // console.dir(_table.columns);
-                            if (currentPosition === results[0].length - 1) {
-                                //otan teleiwsoume me ola
-
-                                resolve();
-                            }
-
-                        });
+                (err: Mysql.IError, ...results: any[]) => {
+                    if (err) {
+                        reject(err);
                     }
+                    if (results.length > 0 && Array.isArray(results[0]) && results[0].length>0) {
+                        results[0].forEach((tableObj, currentPosition) => {
+                            //.log(tableObj.TABLE_NAME);
+                            if (this.tableNamesToUseOnly.length > 0 && this.tableNamesToUseOnly.indexOf(tableObj.TABLE_NAME) !== -1) {
+                                //means that only to use called, and this table is not in this collection, so don't fetch it.
+
+                            } else {
+                                let _table = new MysqlTable(tableObj.TABLE_NAME, this);
+                                _table.primaryKey = (tableObj.column_name);
+
+                                this.connection.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + this.connection.config.database + "' AND TABLE_NAME = '" + _table.name + "';", (errC: Mysql.IError, ...resultsC: any[]) => {
+                                    if (errC) {
+                                        reject(err);
+                                    }
+
+                                    let _tableColumns = [];
+
+                                    for (let i = 0; i < resultsC[0].length; i++) {
+
+                                        let _columnName = resultsC[0][i]['COLUMN_NAME']; //.COLUMN_NAME
+                                        if (_columnName !== _table.primaryKey) {
+                                            _tableColumns.push(_columnName);
+                                        }
+                                    }
+
+                                    _table.columns = (_tableColumns);
+                                    this.tables.push(_table);
+                                    //console.log('pushing ' + _table.name + ' with primary: ' + _table.primaryKey + ' and columns: ');
+                                    // console.dir(_table.columns);
+                                    if (currentPosition === results[0].length - 1) {
+                                        //otan teleiwsoume me ola
+
+                                        resolve();
+                                    }
+
+                                });
+                            }
+                        });
+                    } else {
+                        reject("No infromation can be fetched by your database, please check your permissions");
+                    }
+
                 });
-
-
-            });
 
         });
     }
@@ -167,9 +165,9 @@ class MysqlConnection {
         if (evtType !== undefined) {
             if (evtType === 'INSERT' || evtType === 'UPDATE') {
                 this["emit"](tableWhichCalled.toUpperCase() + ".SAVE", parsedResults);
-            }else if(evtType ==='DELETE'){
-			     this["emit"](tableWhichCalled.toUpperCase() + ".REMOVE", parsedResults);
-			}
+            } else if (evtType === 'DELETE') {
+                this["emit"](tableWhichCalled.toUpperCase() + ".REMOVE", parsedResults);
+            }
             this["emit"](tableWhichCalled.toUpperCase() + "." + evtType, parsedResults);
         }
     }

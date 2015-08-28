@@ -4,15 +4,13 @@ var httpServer = require('http').createServer(app);
 var path = require('path');
 var config = require('config');
 var dbConfig = require('./config/database.json')[process.env.NODE_ENV || 'development'];
-var wrapper = require('./../compiled/index');//require('node-mysql-wrapper');
+var wrapper = require('node-mysql-wrapper');//require('node-mysql-wrapper');
 
-var db = wrapper.wrap=("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8");
+var db = wrapper.wrap("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8");
 //, "users", "user_infos", ["comments", "comment_likes"]); // second parameter for the tables you want to use ( default is all tables). OR->
 //db.useOnly/.useTables("users", "user_infos", ["comments", "comment_likes"]);// default is to use all tables., must be called before _W.ready().
 db.ready(function () { //makes the connect or the link from prev connection and then call the function when it's ready. In here you can load your modules that inherites the wrapper.
-    
-    
-    
+     
     db.table("users").findAll(function (_results) { 
         console.dir(_results);
     });

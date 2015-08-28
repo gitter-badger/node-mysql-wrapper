@@ -82,4 +82,5 @@ var MysqlWrapper = (function () {
     };
     return MysqlWrapper;
 })();
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = MysqlWrapper;

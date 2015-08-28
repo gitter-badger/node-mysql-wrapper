@@ -278,4 +278,5 @@ var MysqlTable = (function () {
     };
     return MysqlTable;
 })();
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = MysqlTable;

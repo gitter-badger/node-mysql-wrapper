@@ -34,4 +34,5 @@ var MysqlUtil = (function () {
     };
     return MysqlUtil;
 })();
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = MysqlUtil;

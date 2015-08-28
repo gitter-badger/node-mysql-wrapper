@@ -1,5 +1,5 @@
-/// <reference path="./../typings/mysql/mysql.d.ts"/>
-/// <reference path="./../typings/bluebird/bluebird.d.ts"/> 
+/// <reference path="../typings/mysql/mysql.d.ts"/>
+/// <reference path="../typings/bluebird/bluebird.d.ts"/> 
 /// <reference path="./MysqlTable.ts"/> 
 var Mysql = require('mysql');
 var Util = require('util');
@@ -87,35 +87,40 @@ var MysqlConnection = (function () {
                 if (err) {
                     reject(err);
                 }
-                [].forEach.call(results[0], function (tableObj, currentPosition) {
-                    if (_this.tableNamesToUseOnly.length > 0 && _this.tableNamesToUseOnly.indexOf(tableObj.TABLE_NAME) !== -1) {
-                    }
-                    else {
-                        var _table = new MysqlTable_1.default(tableObj.TABLE_NAME, _this);
-                        _table.primaryKey = (tableObj.column_name);
-                        _this.connection.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + _this.connection.config.database + "' AND TABLE_NAME = '" + _table.name + "';", function (errC) {
-                            var resultsC = [];
-                            for (var _i = 1; _i < arguments.length; _i++) {
-                                resultsC[_i - 1] = arguments[_i];
-                            }
-                            if (errC) {
-                                reject(err);
-                            }
-                            var _tableColumns = [];
-                            for (var i = 0; i < resultsC[0].length; i++) {
-                                var _columnName = resultsC[0][i]['COLUMN_NAME'];
-                                if (_columnName !== _table.primaryKey) {
-                                    _tableColumns.push(_columnName);
+                if (results.length > 0 && Array.isArray(results[0]) && results[0].length > 0) {
+                    results[0].forEach(function (tableObj, currentPosition) {
+                        if (_this.tableNamesToUseOnly.length > 0 && _this.tableNamesToUseOnly.indexOf(tableObj.TABLE_NAME) !== -1) {
+                        }
+                        else {
+                            var _table = new MysqlTable_1.default(tableObj.TABLE_NAME, _this);
+                            _table.primaryKey = (tableObj.column_name);
+                            _this.connection.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + _this.connection.config.database + "' AND TABLE_NAME = '" + _table.name + "';", function (errC) {
+                                var resultsC = [];
+                                for (var _i = 1; _i < arguments.length; _i++) {
+                                    resultsC[_i - 1] = arguments[_i];
                                 }
-                            }
-                            _table.columns = (_tableColumns);
-                            _this.tables.push(_table);
-                            if (currentPosition === results[0].length - 1) {
-                                resolve();
-                            }
-                        });
-                    }
-                });
+                                if (errC) {
+                                    reject(err);
+                                }
+                                var _tableColumns = [];
+                                for (var i = 0; i < resultsC[0].length; i++) {
+                                    var _columnName = resultsC[0][i]['COLUMN_NAME'];
+                                    if (_columnName !== _table.primaryKey) {
+                                        _tableColumns.push(_columnName);
+                                    }
+                                }
+                                _table.columns = (_tableColumns);
+                                _this.tables.push(_table);
+                                if (currentPosition === results[0].length - 1) {
+                                    resolve();
+                                }
+                            });
+                        }
+                    });
+                }
+                else {
+                    reject("No infromation can be fetched by your database, please check your permissions");
+                }
             });
         });
     };
@@ -184,4 +189,5 @@ var MysqlConnection = (function () {
     };
     return MysqlConnection;
 })();
+Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = MysqlConnection;
