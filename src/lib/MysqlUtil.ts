@@ -16,7 +16,7 @@ class MysqlUtil {
         return objectCopy;
     }
 
-    static toObjectProperty(columnKey): string {
+    static toObjectProperty(columnKey:string): string {
         //convert column_key to objectKey
         return columnKey.replace(/(_.)/g, (x) => { return x[1].toUpperCase() });
     }

@@ -85,9 +85,9 @@ declare module "node-mysql-wrapper" {
 		getRowAsArray(jsObject: any): Array<any>;
 		getPrimaryKeyValue(jsObject: any): number | string;
 		parseQueryResult(result: any, criteria: ICriteria): Promise<any>;
-		find(criteriaRawJsObject: any, callback?: (_results: any[]) => any): Promise<any[]>;
-		findById(id: number | string, callback?: (result: Object) => any): Promise<Object>;
-		findAll(callback?: (_results: any[]) => any): Promise<any[]>;
+		find<T>(criteriaRawJsObject: any, callback?: (_results: T[]) => any): Promise<T[]>;
+		findById<T>(id: number|string, callback?: (result: T) => any): Promise<T>;
+		findAll<T>(callback?: (_results: T[]) => any): Promise<T[]>;
 		save(criteriaRawJsObject: any, callback?: (_result: any) => any): Promise<any>;
 		safeRemove(id: number | string, callback?: (_result: {
 			affectedRows:number;

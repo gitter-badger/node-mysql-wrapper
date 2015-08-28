@@ -170,8 +170,8 @@ class MysqlTable {
         });
     }
 
-    find(criteriaRawJsObject: any, callback?: (_results: any[]) => any): Promise<any[]> {
-        return new Promise<any[]>((resolve, reject) => {
+    find<T>(criteriaRawJsObject: any, callback?: (_results: T[]) => any): Promise<T[]> {
+        return new Promise<T[]>((resolve, reject) => {
 
             var criteria = this._criteriaBuilder.build(criteriaRawJsObject);
 
@@ -188,7 +188,7 @@ class MysqlTable {
 
                 });
 
-                Promise.all(parseQueryResultsPromises).then((_objects: any[]) => {
+                Promise.all(parseQueryResultsPromises).then((_objects: T[]) => {
                     resolve(_objects);
                     if (callback) {
                         callback(_objects);
@@ -201,15 +201,15 @@ class MysqlTable {
         });
     }
 
-    findById(id: number|string, callback?: (result: Object) => any): Promise<Object> {
-        return new Promise<Object>((resolve, reject) => {
+    findById<T>(id: number|string, callback?: (result: T) => any): Promise<T> {
+        return new Promise<T>((resolve, reject) => {
             let criteria = {};
             criteria[this.primaryKey] = id;
-            this.find(criteria).then((results) => resolve(results[0])).catch((err: any) => reject(err));
+            this.find<T>(criteria).then((results) => resolve(results[0])).catch((err: any) => reject(err));
         });
     }
 
-    findAll(callback?: (_results: any[]) => any): Promise<any[]> {
+    findAll<T>(callback?: (_results: T[]) => any): Promise<T[]> {
         return this.find({}, callback);
     }
 
