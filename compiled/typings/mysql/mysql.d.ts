@@ -3,7 +3,7 @@
 // Definitions by: William Johnston <https://github.com/wjohnsto>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 
-///<reference path='../node/node.d.ts' />
+///<reference path='./../node/node.d.ts' />
 
 declare module "mysql" {
 	import stream = require("stream");
