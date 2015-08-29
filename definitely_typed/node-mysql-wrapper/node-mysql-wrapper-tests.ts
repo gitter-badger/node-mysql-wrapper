@@ -1,24 +1,71 @@
-///<reference path='./node-mysql-wrapper.d.ts' />
-
-var wrapper = require("node-mysql-wrapper");
+/// <reference path="./node-mysql-wrapper.d.ts" />
+var express = require('express');
+var app = express();
+var server = require('http').createServer(app);
+import wrapper = require("node-mysql-wrapper");
 var db = wrapper.wrap("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8");
 
+
+
+
+class User { //or interface
+    userId: number;
+    username: string;
+    mail: string;
+    comments: Comment[];
+}
+
+interface Comment {
+    commentId: number;
+    content: string;
+
+}
+
 db.ready(() => {
+    var usersDb = db.table<User>("users");
 
-    db.table("users").on("insert", (parsedResults:any[]) => {
+    usersDb.findById(16, (_user) => {
+        console.log("TEST1: \n");
+        console.log("FOUND USER WITH USERNAME: " + _user.username);
+    });
+    
+    /* OR   usersDb.findById(18).then(_user=> {
+         console.log("FOUND USER WITH USERNAME: " + _user.username);
+     }, (err) => { console.log("ERROR ON FETCHING FINDBY ID: " + err) });
+   */
+
+    usersDb.find({ userId: 18, comments: { userId: '=' } }, _users=> {
+        var _user = _users[0];
+        console.log("TEST2: \n");
+        console.log(_user.username + " with ");
+        console.log(_user.comments.length + " comments ");
+        _user.comments.forEach(_comment=> {
+            console.log("--------------\n" + _comment.content);
+        });
 
     });
 
-    db.table("users").findAll().then((results:any[]) => {
-        console.dir(results);
+    usersDb.safeRemove(5620, answer=> {
+        console.log("TEST 3: \n");
+        console.log(answer.affectedRows + ' (1) has removed from table:  ' + answer.table);
+
     });
 
-    db.table("users").find({ yearsOld: 22 }, (results:any[]) => {
-        console.dir(results);
+    var auser = new User();
+    auser.username = ' just a username';
+    auser.mail = ' just an email';
+
+    usersDb.save(auser, newUser=> {
+        console.log("TEST 4: \n");
+        console.log("NEW USER HAS CREATED WITH NEW USER ID: " + newUser.userId);
+
     });
 
-    db.table("users").findById(18, (result:any) => {
-        console.dir(result);
-    });
 
+});
+
+
+var httpPort = 1193;//config.get('Server.port') || 1193;
+server.listen(httpPort, function() {
+    console.log("Server is running on " + httpPort);
 });

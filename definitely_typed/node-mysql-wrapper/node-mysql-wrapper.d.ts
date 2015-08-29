@@ -26,12 +26,13 @@ declare module "node-mysql-wrapper" {
         static forEachKey<T, U>(map: Map<T>, callback: (key: string) => U): U;
     }
 
-    export interface ICriteria {
+    interface ICriteria {
         rawCriteriaObject: any;
         tables: string[];
         noDatabaseProperties: string[];
         whereClause: string;
     }
+	
     class Criteria implements ICriteria {
         rawCriteriaObject: any;
         tables: string[];
@@ -39,6 +40,7 @@ declare module "node-mysql-wrapper" {
         whereClause: string;
         constructor(rawCriteriaObject: any, tables: string[], noDatabaseProperties: string[], whereClause: string);
     }
+	
     class CriteriaBuilder<T> {
         private _table;
         constructor(table: MysqlTable<T>);
@@ -66,6 +68,7 @@ declare module "node-mysql-wrapper" {
         query(queryStr: string, callback: (err: Mysql.IError, results: any) => any, queryArguments?: any[]): void;
         table<T>(tableName: string): MysqlTable<T>;
     }
+	
     class MysqlTable<T> {
         private _name;
         private _connection;
