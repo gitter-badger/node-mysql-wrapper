@@ -53,14 +53,14 @@ var connection = mysql.createConnection({
 var wrapper = require('node-mysql-wrapper');
 var db = wrapper.wrap(connection);
 //or (without need of require mysql module) ->
-var db = wrapper.wrap("mysql://user:pass@127.0.0.1/databaseName?debug=false&charset=utf8");
+//var db = wrapper.wrap("mysql://user:pass@127.0.0.1/databaseName?debug=false&charset=utf8");
 
 db.ready(function(){
 	//your code goes here	
 	//users -> an example table inside the database, just call it like property:
 
-	db.table("users").findById(8,function(rowResults){
-	    console.dir(rowResults[0]);
+	db.table("users").findById(8,function(user){
+	    console.dir(user);
 
 		//to destroy the whole connection, its events and its tables use: 
 		db.destroy();
