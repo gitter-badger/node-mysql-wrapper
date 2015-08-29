@@ -1,6 +1,6 @@
 {
   "name": "node-mysql-wrapper",
-  "version": "2.0.7",
+  "version": "2.0.8",
   "description": "This is a node js module, written in TypeScript (module is compiled to JavaScript), which manages mysql (node-mysql) connection and models in a way that you expected!",
   "main": "./compiled/index.js",
   "scripts": {

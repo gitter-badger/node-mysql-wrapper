@@ -5,19 +5,18 @@ import * as Mysql from 'mysql';
 import * as Util from 'util';
 import * as Promise from 'bluebird';
 import {EventEmitter} from 'events';
-
 import MysqlTable from "./MysqlTable";
 import MysqlUtil from "./MysqlUtil";
 
-class MysqlConnection {
+class MysqlConnection extends EventEmitter {
     connection: Mysql.IConnection;
     eventTypes = ["INSERT", "UPDATE", "REMOVE", "SAVE"];
     tableNamesToUseOnly = [];
-    tables: MysqlTable[] = [];
+    tables: MysqlTable<any>[] = [];
 
     constructor(connection: string | Mysql.IConnection) {
+        super();
         this.create(connection);
-        Util.inherits(this, EventEmitter);
     }
 
     create(connection: string | Mysql.IConnection): void {
@@ -34,7 +33,9 @@ class MysqlConnection {
     }
 
     end(callback?: (error: any) => void): void {
-        this["removeAllListeners"](this.eventTypes);
+        this.eventTypes.forEach(_evt=> {
+            this.removeAllListeners(_evt);
+        });
         this.connection.end((err) => {
             // The connection is terminated now
             callback(err);
@@ -43,7 +44,9 @@ class MysqlConnection {
     }
 
     destroy(): void {
-        this["removeAllListeners"](this.eventTypes);
+        this.eventTypes.forEach(_evt=> {
+            this.removeAllListeners(_evt);
+        });
         this.connection.destroy();
     }
 
@@ -102,7 +105,7 @@ class MysqlConnection {
                     if (err) {
                         reject(err);
                     }
-                    if (results.length > 0 && Array.isArray(results[0]) && results[0].length>0) {
+                    if (results.length > 0 && Array.isArray(results[0]) && results[0].length > 0) {
                         results[0].forEach((tableObj, currentPosition) => {
                             //.log(tableObj.TABLE_NAME);
                             if (this.tableNamesToUseOnly.length > 0 && this.tableNamesToUseOnly.indexOf(tableObj.TABLE_NAME) !== -1) {
@@ -164,11 +167,11 @@ class MysqlConnection {
 
         if (evtType !== undefined) {
             if (evtType === 'INSERT' || evtType === 'UPDATE') {
-                this["emit"](tableWhichCalled.toUpperCase() + ".SAVE", parsedResults);
+                this.emit(tableWhichCalled.toUpperCase() + ".SAVE", parsedResults);
             } else if (evtType === 'DELETE') {
-                this["emit"](tableWhichCalled.toUpperCase() + ".REMOVE", parsedResults);
+                this.emit(tableWhichCalled.toUpperCase() + ".REMOVE", parsedResults);
             }
-            this["emit"](tableWhichCalled.toUpperCase() + "." + evtType, parsedResults);
+            this.emit(tableWhichCalled.toUpperCase() + "." + evtType, parsedResults);
         }
     }
 
@@ -179,13 +182,13 @@ class MysqlConnection {
             for (let i = 0; i < evtType.length; i++) {
                 let _theEventType = evtType[i].toUpperCase();
                 if (this.eventTypes.indexOf(_theEventType) !== -1) {
-                    this["on"](tableName.toUpperCase() + "." + _theEventType, callback);
+                    this.on(tableName.toUpperCase() + "." + _theEventType, callback);
                 }
             }
         } else {
             evtType = evtType.toUpperCase();
             if (this.eventTypes.indexOf(evtType) !== -1) {
-                this["on"](tableName.toUpperCase() + "." + evtType, callback);
+                this.on(tableName.toUpperCase() + "." + evtType, callback);
             }
         }
     }
@@ -195,7 +198,7 @@ class MysqlConnection {
 
         evtType = evtType.toUpperCase();
         if (this.eventTypes.indexOf(evtType) !== -1) {
-            this["removeListener"](tableName.toUpperCase() + "." + evtType, callbackToRemove);
+            this.removeListener(tableName.toUpperCase() + "." + evtType, callbackToRemove);
         }
     }
 
@@ -214,7 +217,7 @@ class MysqlConnection {
         }
     }
 
-    table(tableName: string): MysqlTable {
+    table<T>(tableName: string): MysqlTable<T> {
         for (let i = 0; i < this.tables.length; i++) {
             if (this.tables[i].name === tableName || this.tables[i].name === MysqlUtil.toObjectProperty(tableName)) {
 

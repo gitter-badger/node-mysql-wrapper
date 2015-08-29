@@ -175,7 +175,12 @@ var MysqlTable = (function () {
         return new Promise(function (resolve, reject) {
             var criteria = {};
             criteria[_this.primaryKey] = id;
-            _this.find(criteria).then(function (results) { return resolve(results[0]); }).catch(function (err) { return reject(err); });
+            _this.find(criteria).then(function (results) {
+                resolve(results[0]);
+                if (callback) {
+                    callback(results[0]);
+                }
+            }).catch(function (err) { return reject(err); });
         });
     };
     MysqlTable.prototype.findAll = function (callback) {

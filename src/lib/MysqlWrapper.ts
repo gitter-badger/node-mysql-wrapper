@@ -58,7 +58,7 @@ class MysqlWrapper {
             //means the first listener,so  do the link/connect to the connection now. No before.
 
             this.connection.link().then(() => {
-                [].forEach.call(this.connection.tables, (_table: MysqlTable) => {
+                [].forEach.call(this.connection.tables, (_table: MysqlTable<any>) => {
                     this[MysqlUtil.toObjectProperty(_table.name)] = this[_table.name] = _table;
                 });
 
@@ -68,8 +68,8 @@ class MysqlWrapper {
         }
     }
 
-    table(tableName: string):MysqlTable {
-        return this.connection.table(tableName);
+    table<T>(tableName: string):MysqlTable<T> {
+        return this.connection.table<T>(tableName);
     }
 
     noticeReady(): void {

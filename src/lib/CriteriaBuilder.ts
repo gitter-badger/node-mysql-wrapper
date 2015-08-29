@@ -14,10 +14,10 @@ export class Criteria implements ICriteria {
     }
 }
 
-export class CriteriaBuilder {
-    private _table: MysqlTable;
+export class CriteriaBuilder<T> {
+    private _table: MysqlTable<T>;
 
-    constructor(table: MysqlTable) {
+    constructor(table: MysqlTable<T>) {
         this._table = table;
     }
 

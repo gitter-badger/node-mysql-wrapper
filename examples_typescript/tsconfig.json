@@ -1,0 +1,22 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "noImplicitAny": false,
+    "removeComments": true,
+    "preserveConstEnums": true,
+    "sourceMap": false,
+    "target": "ES5",
+    "noEmit": false,
+    "noEmitOnError": true,
+    "experimentalDecorators": false,
+    "outDir": "./",
+    "charset": "UTF-8",
+    "listFiles": true,
+    "noLib": false,
+    "diagnostics": true,
+    "declaration": false
+  },
+  "files": [
+    "./node-mysql-wrapper-test.ts"
+  ]
+}

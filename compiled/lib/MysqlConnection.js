@@ -1,19 +1,24 @@
+var __extends = (this && this.__extends) || function (d, b) {
+    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() { this.constructor = d; }
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+};
 /// <reference path="../typings/mysql/mysql.d.ts"/>
 /// <reference path="../typings/bluebird/bluebird.d.ts"/> 
 /// <reference path="./MysqlTable.ts"/> 
 var Mysql = require('mysql');
-var Util = require('util');
 var Promise = require('bluebird');
 var events_1 = require('events');
 var MysqlTable_1 = require("./MysqlTable");
 var MysqlUtil_1 = require("./MysqlUtil");
-var MysqlConnection = (function () {
+var MysqlConnection = (function (_super) {
+    __extends(MysqlConnection, _super);
     function MysqlConnection(connection) {
+        _super.call(this);
         this.eventTypes = ["INSERT", "UPDATE", "REMOVE", "SAVE"];
         this.tableNamesToUseOnly = [];
         this.tables = [];
         this.create(connection);
-        Util.inherits(this, events_1.EventEmitter);
     }
     MysqlConnection.prototype.create = function (connection) {
         if (typeof connection === "string" || connection instanceof String) {
@@ -27,13 +32,19 @@ var MysqlConnection = (function () {
         this.connection = connection;
     };
     MysqlConnection.prototype.end = function (callback) {
-        this["removeAllListeners"](this.eventTypes);
+        var _this = this;
+        this.eventTypes.forEach(function (_evt) {
+            _this.removeAllListeners(_evt);
+        });
         this.connection.end(function (err) {
             callback(err);
         });
     };
     MysqlConnection.prototype.destroy = function () {
-        this["removeAllListeners"](this.eventTypes);
+        var _this = this;
+        this.eventTypes.forEach(function (_evt) {
+            _this.removeAllListeners(_evt);
+        });
         this.connection.destroy();
     };
     MysqlConnection.prototype.link = function (readyCallback) {
@@ -137,12 +148,12 @@ var MysqlConnection = (function () {
         }
         if (evtType !== undefined) {
             if (evtType === 'INSERT' || evtType === 'UPDATE') {
-                this["emit"](tableWhichCalled.toUpperCase() + ".SAVE", parsedResults);
+                this.emit(tableWhichCalled.toUpperCase() + ".SAVE", parsedResults);
             }
             else if (evtType === 'DELETE') {
-                this["emit"](tableWhichCalled.toUpperCase() + ".REMOVE", parsedResults);
+                this.emit(tableWhichCalled.toUpperCase() + ".REMOVE", parsedResults);
             }
-            this["emit"](tableWhichCalled.toUpperCase() + "." + evtType, parsedResults);
+            this.emit(tableWhichCalled.toUpperCase() + "." + evtType, parsedResults);
         }
     };
     MysqlConnection.prototype.watch = function (tableName, evtType, callback) {
@@ -150,21 +161,21 @@ var MysqlConnection = (function () {
             for (var i = 0; i < evtType.length; i++) {
                 var _theEventType = evtType[i].toUpperCase();
                 if (this.eventTypes.indexOf(_theEventType) !== -1) {
-                    this["on"](tableName.toUpperCase() + "." + _theEventType, callback);
+                    this.on(tableName.toUpperCase() + "." + _theEventType, callback);
                 }
             }
         }
         else {
             evtType = evtType.toUpperCase();
             if (this.eventTypes.indexOf(evtType) !== -1) {
-                this["on"](tableName.toUpperCase() + "." + evtType, callback);
+                this.on(tableName.toUpperCase() + "." + evtType, callback);
             }
         }
     };
     MysqlConnection.prototype.unwatch = function (tableName, evtType, callbackToRemove) {
         evtType = evtType.toUpperCase();
         if (this.eventTypes.indexOf(evtType) !== -1) {
-            this["removeListener"](tableName.toUpperCase() + "." + evtType, callbackToRemove);
+            this.removeListener(tableName.toUpperCase() + "." + evtType, callbackToRemove);
         }
     };
     MysqlConnection.prototype.query = function (queryStr, callback, queryArguments) {
@@ -188,6 +199,6 @@ var MysqlConnection = (function () {
         return undefined;
     };
     return MysqlConnection;
-})();
+})(events_1.EventEmitter);
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = MysqlConnection;

@@ -5,17 +5,17 @@ import {ICriteria, CriteriaBuilder} from "./CriteriaBuilder";
 import * as Promise from 'bluebird';
 export var EQUAL_TO_PROPERTY_SYMBOL = '=';
 
-class MysqlTable {
+class MysqlTable<T> {
     private _name: string;
     private _connection: MysqlConnection;
     private _columns: string[];
     private _primaryKey: string;
-    private _criteriaBuilder: CriteriaBuilder;
+    private _criteriaBuilder: CriteriaBuilder<T>;
 
     constructor(tableName: string, connection: MysqlConnection) {
         this._name = tableName;
         this._connection = connection;
-        this._criteriaBuilder = new CriteriaBuilder(this);
+        this._criteriaBuilder = new CriteriaBuilder<T>(this);
     }
 
     set columns(cols: string[]) {
@@ -170,7 +170,7 @@ class MysqlTable {
         });
     }
 
-    find<T>(criteriaRawJsObject: any, callback?: (_results: T[]) => any): Promise<T[]> {
+    find(criteriaRawJsObject: any, callback?: (_results: T[]) => any): Promise<T[]> {
         return new Promise<T[]>((resolve, reject) => {
 
             var criteria = this._criteriaBuilder.build(criteriaRawJsObject);
@@ -201,15 +201,21 @@ class MysqlTable {
         });
     }
 
-    findById<T>(id: number|string, callback?: (result: T) => any): Promise<T> {
+    findById(id: number|string, callback?: (result: T) => any): Promise<T> {
         return new Promise<T>((resolve, reject) => {
             let criteria = {};
             criteria[this.primaryKey] = id;
-            this.find<T>(criteria).then((results) => resolve(results[0])).catch((err: any) => reject(err));
+            this.find(criteria).then((results) => {
+                resolve(results[0]);
+                if (callback) {
+                    callback(results[0]);
+                }
+            }).catch((err: any) => reject(err));
+
         });
     }
 
-    findAll<T>(callback?: (_results: T[]) => any): Promise<T[]> {
+    findAll(callback?: (_results: T[]) => any): Promise<T[]> {
         return this.find({}, callback);
     }
 
@@ -223,7 +229,7 @@ class MysqlTable {
             var objectColumns = arr[0]; // = columns , 1= values
             var objectValues = arr[1];
             //   }
-			var obj = this.objectFromRow(criteriaRawJsObject);
+            var obj = this.objectFromRow(criteriaRawJsObject);
             if (primaryKeyValue > 0) {
                 //update
                 var colummnsAndValuesStr = "";
@@ -255,7 +261,7 @@ class MysqlTable {
                     // jsObject[this.primaryKey] = result.insertId;
 
                     var primaryKeyJsObjectProperty = MysqlUtil.toObjectProperty(this.primaryKey);
-                   
+
                     obj[primaryKeyJsObjectProperty] = result.insertId;
                     //criteriaRawJsObject[primaryKeyJsObjectProperty] = result.insertId;
                     primaryKeyValue = result.insertId;
@@ -272,11 +278,11 @@ class MysqlTable {
         });
     }
 
-	
-	  
-	  
-	   safeRemove(id: number|string, callback?: (_result: { affectedRows:number; table:string }) => any): Promise<{ affectedRows:number; table:string }> {
-        return new Promise<{ affectedRows:number; table:string }>((resolve, reject) => {
+
+
+
+	   safeRemove(id: number|string, callback?: (_result: { affectedRows: number; table: string }) => any): Promise<{ affectedRows: number; table: string }> {
+        return new Promise<{ affectedRows: number; table: string }>((resolve, reject) => {
 
 
             let _query = "DELETE FROM " + this.name + " WHERE " + this.primaryKey + " = " + id;
@@ -323,8 +329,8 @@ class MysqlTable {
         });
     }*/
 
-    remove(criteriaRawJsObject: any, callback?: (_result: { affectedRows:number; table:string }) => any): Promise<{ affectedRows:number; table:string }> {
-        return new Promise<{ affectedRows:number; table:string }>((resolve, reject) => {
+    remove(criteriaRawJsObject: any, callback?: (_result: { affectedRows: number; table: string }) => any): Promise<{ affectedRows: number; table: string }> {
+        return new Promise<{ affectedRows: number; table: string }>((resolve, reject) => {
             let primaryKeyValue = this.getPrimaryKeyValue(criteriaRawJsObject);
             if (!primaryKeyValue || primaryKeyValue <= 0) {
                 let arr = this.getRowAsArray(criteriaRawJsObject);
