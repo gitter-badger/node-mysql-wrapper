@@ -20,8 +20,10 @@ declare class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
 	/**
 	 * Create a new promise. The passed in function will receive functions `resolve` and `reject` as its arguments which can be called to seal the fate of the created promise.
 	 */
-    constructor(callback: (resolve: (thenableOrResult: R | Promise.Thenable<R>) => void, reject: (error: any) => void) => void);
-
+    // constructor(callback: (resolve: (thenableOrResult: R | Promise.Thenable<R>) => void, reject: (error: any) => void) => void);
+    //edw auto einai gia na pernei kai void xwris na epistrefei timh
+    constructor(callback: (resolve?: (thenableOrResult?: R | Promise.Thenable<R>) => void, reject?: (error?: any) => void) => void);
+  
 	/**
 	 * Promises/A+ `.then()` with progress handler. Returns a new promise chained from this promise. The new promise will be rejected or resolved dedefer on the passed `fulfilledHandler`, `rejectedHandler` and the state of this promise.
 	 */
@@ -417,6 +419,12 @@ declare class Promise<R> implements Promise.Thenable<R>, Promise.Inspection<R> {
     // TODO how to model promisifyAll?
     static promisifyAll(target: Object, options?: Object): Object;
 
+
+	/**
+	 * Returns a promise that is resolved by a node style callback function.
+	 */
+    static fromNode(resolver: (callback: (err: any, result: any) => void) => void): Promise<any>;
+
 	/**
 	 * Returns a function that can use `yield` to run asynchronous code synchronously. This feature requires the support of generators which are drafted in the next version of the language. Node version greater than `0.11.2` is required and needs to be executed with the `--harmony-generators` (or `--harmony`) command-line switch.
 	 */
@@ -638,7 +646,8 @@ declare module Promise {
 		/**
 		 * Returns a reference to the controlled promise that can be passed to clients.
 		 */
-        promise: Promise<R>;
+        promise: Promise<R>; 
+     
 
 		/**
 		 * Resolve the underlying promise with `value` as the resolution value. If `value` is a thenable or a promise, the underlying promise will assume its state.

@@ -1,4 +1,5 @@
 var MysqlUtil_1 = require("./MysqlUtil");
+var SelectQueryRules_1 = require("./SelectQueryRules");
 var Promise = require('bluebird');
 var MysqlWrapper = (function () {
     function MysqlWrapper(connection) {
@@ -79,6 +80,18 @@ var MysqlWrapper = (function () {
     MysqlWrapper.prototype.end = function (maybeAcallbackError) {
         this.readyListenerCallbacks = [];
         this.connection.end(maybeAcallbackError);
+    };
+    MysqlWrapper.prototype.newTableRules = function (tableName) {
+        var tbRule = new SelectQueryRules_1.SelectQueryRules();
+        this.table(tableName).rules = tbRule;
+        return tbRule;
+    };
+    MysqlWrapper.prototype.buildRules = function (parentRules) {
+        var newRules = new SelectQueryRules_1.SelectQueryRules();
+        if (parentRules) {
+            newRules.from(parentRules);
+        }
+        return newRules;
     };
     return MysqlWrapper;
 })();

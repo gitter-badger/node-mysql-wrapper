@@ -1,4 +1,5 @@
 var MysqlUtil_1 = require("./MysqlUtil");
+var SelectQueryRules_1 = require("./SelectQueryRules");
 var CriteriaBuilder_1 = require("./CriteriaBuilder");
 var Promise = require('bluebird');
 exports.EQUAL_TO_PROPERTY_SYMBOL = '=';
@@ -7,6 +8,7 @@ var MysqlTable = (function () {
         this._name = tableName;
         this._connection = connection;
         this._criteriaBuilder = new CriteriaBuilder_1.CriteriaBuilder(this);
+        this._rules = new SelectQueryRules_1.SelectQueryRules();
     }
     Object.defineProperty(MysqlTable.prototype, "columns", {
         get: function () {
@@ -38,6 +40,16 @@ var MysqlTable = (function () {
     Object.defineProperty(MysqlTable.prototype, "name", {
         get: function () {
             return this._name;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(MysqlTable.prototype, "rules", {
+        get: function () {
+            return this._rules;
+        },
+        set: function (_rules) {
+            this._rules = _rules;
         },
         enumerable: true,
         configurable: true
@@ -117,7 +129,7 @@ var MysqlTable = (function () {
     };
     MysqlTable.prototype.parseQueryResult = function (result, criteria) {
         var _this = this;
-        return new Promise(function (resolve, reject) {
+        return new Promise(function (resolve) {
             var obj = _this.objectFromRow(result);
             if (criteria.tables.length > 0) {
                 var tableFindPromiseList = [];
@@ -148,11 +160,15 @@ var MysqlTable = (function () {
             }
         });
     };
-    MysqlTable.prototype.find = function (criteriaRawJsObject, callback) {
+    MysqlTable.prototype.find = function (criteriaRawJsObject, rulesOrCallback, secondCallbackIfNoFirst) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var criteria = _this._criteriaBuilder.build(criteriaRawJsObject);
-            var query = "SELECT * FROM " + _this.name + criteria.whereClause;
+            var queryRules = _this._rules.toString();
+            if (rulesOrCallback !== undefined && !MysqlUtil_1.default.isFunction(rulesOrCallback)) {
+                queryRules = rulesOrCallback.toString();
+            }
+            var query = "SELECT * FROM " + _this.name + criteria.whereClause + queryRules;
             _this.connection.query(query, function (error, results) {
                 if (error || !results) {
                     reject(error + ' Error. On find');
@@ -162,10 +178,17 @@ var MysqlTable = (function () {
                     parseQueryResultsPromises.push(_this.parseQueryResult(result, criteria));
                 });
                 Promise.all(parseQueryResultsPromises).then(function (_objects) {
-                    resolve(_objects);
-                    if (callback) {
+                    var callback = undefined;
+                    if (rulesOrCallback !== undefined && MysqlUtil_1.default.isFunction(rulesOrCallback)) {
+                        callback = rulesOrCallback;
+                    }
+                    else if (secondCallbackIfNoFirst !== undefined) {
+                        callback = secondCallbackIfNoFirst;
+                    }
+                    if (callback !== undefined) {
                         callback(_objects);
                     }
+                    resolve(_objects);
                 });
             });
         });
@@ -183,8 +206,18 @@ var MysqlTable = (function () {
             }).catch(function (err) { return reject(err); });
         });
     };
-    MysqlTable.prototype.findAll = function (callback) {
-        return this.find({}, callback);
+    MysqlTable.prototype.findAll = function (rulesOrCallback, secondCallbackIfNoFirst) {
+        if (rulesOrCallback !== undefined && !MysqlUtil_1.default.isFunction(rulesOrCallback)) {
+            var _rules = rulesOrCallback;
+            return this.find({}, _rules, secondCallbackIfNoFirst);
+        }
+        else if (rulesOrCallback !== undefined) {
+            var _cb = rulesOrCallback;
+            return this.find({}, _cb);
+        }
+        else {
+            return this.find({});
+        }
     };
     MysqlTable.prototype.save = function (criteriaRawJsObject, callback) {
         var _this = this;

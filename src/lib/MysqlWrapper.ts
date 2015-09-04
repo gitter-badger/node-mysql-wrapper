@@ -1,9 +1,10 @@
 ﻿import MysqlConnection from "./MysqlConnection";
 import MysqlUtil from "./MysqlUtil";
-
+import MysqlTable from "./MysqlTable";
+import {SelectQueryRules} from "./SelectQueryRules";
 import * as Promise from 'bluebird';
 import * as Mysql from 'mysql';
-import MysqlTable from "./MysqlTable";
+
 
 
 class MysqlWrapper {
@@ -68,7 +69,7 @@ class MysqlWrapper {
         }
     }
 
-    table<T>(tableName: string):MysqlTable<T> {
+    table<T>(tableName: string): MysqlTable<T> {
         return this.connection.table<T>(tableName);
     }
 
@@ -79,7 +80,7 @@ class MysqlWrapper {
     }
 
     removeReadyListener(callback: () => void) {
-        for (var i = 0; i < this.readyListenerCallbacks.length; i++) {
+        for (let i = 0; i < this.readyListenerCallbacks.length; i++) {
             if (this.readyListenerCallbacks[i] === callback) {
                 this.readyListenerCallbacks.slice(i, 1);
                 break;
@@ -91,7 +92,7 @@ class MysqlWrapper {
         this.connection.query(queryStr, callback, queryArguments);
     }
 
-    destroy():void {
+    destroy(): void {
         this.readyListenerCallbacks = [];
         this.connection.destroy();
     }
@@ -99,6 +100,21 @@ class MysqlWrapper {
     end(maybeAcallbackError: (err: any) => void) {
         this.readyListenerCallbacks = [];
         this.connection.end(maybeAcallbackError);
+    }
+
+    newTableRules(tableName: string): SelectQueryRules {
+        let tbRule = new SelectQueryRules();
+        this.table(tableName).rules = tbRule;
+        return tbRule;
+    }
+
+    buildRules(): SelectQueryRules;
+    buildRules(parentRules?: SelectQueryRules): SelectQueryRules {
+        let newRules = new SelectQueryRules();
+        if (parentRules) {
+            newRules.from(parentRules);
+        }
+        return newRules;
     }
 
 }

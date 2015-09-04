@@ -32,6 +32,10 @@ var MysqlUtil = (function () {
         }
         return result;
     };
+    MysqlUtil.isFunction = function (functionToCheck) {
+        var getType = {};
+        return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+    };
     return MysqlUtil;
 })();
 Object.defineProperty(exports, "__esModule", { value: true });

@@ -6,8 +6,8 @@ class MysqlUtil {
     constructor() { }
 
     static copyObject<T>(object: T): T {
-        var objectCopy = <T> {};
-        for (var key in object) {
+        let objectCopy = <T> {};
+        for (let key in object) {
             if (object.hasOwnProperty(key)) {
                 objectCopy[key] = object[key];
             }
@@ -16,7 +16,7 @@ class MysqlUtil {
         return objectCopy;
     }
 
-    static toObjectProperty(columnKey:string): string {
+    static toObjectProperty(columnKey: string): string {
         //convert column_key to objectKey
         return columnKey.replace(/(_.)/g, (x) => { return x[1].toUpperCase() });
     }
@@ -41,6 +41,11 @@ class MysqlUtil {
             if ((result = callback(id))) break;
         }
         return result;
+    }
+
+    static isFunction(functionToCheck) {
+        let getType = {};
+        return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
     }
 
 

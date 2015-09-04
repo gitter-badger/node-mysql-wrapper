@@ -5,23 +5,27 @@
     "removeComments": true,
     "preserveConstEnums": true,
     "sourceMap": false,
-    "target": "ES5",
+    "target": "es5",
     "noEmit": false,
     "noEmitOnError": true,
     "experimentalDecorators": false,
     "outDir": "./compiled",
     "charset": "UTF-8",
     "listFiles": true,
-    "noLib": false,
+    "noLib": true,
     "diagnostics": true,
     "declaration": false
   },
   "files": [
+    "./src/lib.d.ts",
     "./src/index.ts",
     "./src/lib/CriteriaBuilder.ts",
+    "./src/lib/SelectQueryRules.ts",
     "./src/lib/MysqlConnection.ts",
     "./src/lib/MysqlTable.ts",
     "./src/lib/MysqlUtil.ts",
     "./src/lib/MysqlWrapper.ts"
-  ]
+    
+  ],
+  "exclude": [ "./src/typings" ]
 }

@@ -17,11 +17,11 @@ export class Criteria implements ICriteria {
 export class CriteriaBuilder<T> {
     private _table: MysqlTable<T>;
 
+    
     constructor(table: MysqlTable<T>) {
         this._table = table;
     }
-
-
+    
     build(rawCriteriaObject: any): Criteria {
         let colsToSearch = [];
         let tablesToSearch = [];

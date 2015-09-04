@@ -1,6 +1,7 @@
 ﻿import MysqlConnection from "./lib/MysqlConnection";
 import MysqlWrapper from "./lib/MysqlWrapper";
 import * as Mysql from "mysql";
+import {SelectQueryRules} from "./lib/SelectQueryRules";
 
 if (Function.prototype["name"] === undefined) {
     //works only for function something() {}; no for var something = function(){}
@@ -13,7 +14,7 @@ if (Function.prototype["name"] === undefined) {
     });
 }
 
-export  function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection: Mysql.IConnection |  string, ...useTables: any[]): MysqlWrapper {
+export function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection: Mysql.IConnection |  string, ...useTables: any[]): MysqlWrapper {
     let mysqlCon = new MysqlConnection(mysqlUrlOrObjectOrMysqlAlreadyConnection);
     let mysqlWrapper = new MysqlWrapper(mysqlCon);
 
@@ -23,3 +24,5 @@ export  function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection: Mysql.IConnectio
 
     return mysqlWrapper;
 }
+
+exports.SelectQueryRules =  SelectQueryRules;

@@ -59,7 +59,7 @@ class MysqlConnection extends EventEmitter {
                         reject(err.stack);
 
                     }
-
+                   
                     //console.log('MYSQL: connected as id ' + self.connection.threadId);
                     this.fetchDatabaseInfornation().then(() => {
                         resolve();
@@ -129,7 +129,7 @@ class MysqlConnection extends EventEmitter {
                                             _tableColumns.push(_columnName);
                                         }
                                     }
-
+                                   
                                     _table.columns = (_tableColumns);
                                     this.tables.push(_table);
                                     //console.log('pushing ' + _table.name + ' with primary: ' + _table.primaryKey + ' and columns: ');
@@ -137,7 +137,7 @@ class MysqlConnection extends EventEmitter {
                                     if (currentPosition === results[0].length - 1) {
                                         //otan teleiwsoume me ola
 
-                                        resolve();
+                                       resolve();
                                     }
 
                                 });
