@@ -1,17 +1,17 @@
-﻿import MysqlConnection from "./MysqlConnection";
-import MysqlUtil from "./MysqlUtil";
-import MysqlTable from "./MysqlTable";
+﻿import Connection from "./Connection";
+import Helper from "./Helper";
+import Table from "./Table";
 import {SelectQueryRules} from "./SelectQueryRules";
 import * as Promise from 'bluebird';
 import * as Mysql from 'mysql';
 
 
 
-class MysqlWrapper {
-    connection: MysqlConnection;
+class Wrapper {
+    connection: Connection;
     readyListenerCallbacks = new Array<Function>();            //()=>void
 
-    constructor(connection?: MysqlConnection) {
+    constructor(connection?: Connection) {
         this.setConnection(connection);
     }
 
@@ -31,7 +31,7 @@ class MysqlWrapper {
         });
     }
 
-    setConnection(connection: MysqlConnection): void {
+    setConnection(connection: Connection): void {
         this.connection = connection;
     }
 
@@ -59,8 +59,8 @@ class MysqlWrapper {
             //means the first listener,so  do the link/connect to the connection now. No before.
 
             this.connection.link().then(() => {
-                [].forEach.call(this.connection.tables, (_table: MysqlTable<any>) => {
-                    this[MysqlUtil.toObjectProperty(_table.name)] = this[_table.name] = _table;
+                [].forEach.call(this.connection.tables, (_table: Table<any>) => {
+                    this[Helper.toObjectProperty(_table.name)] = this[_table.name] = _table;
                 });
 
                 this.noticeReady();
@@ -69,7 +69,7 @@ class MysqlWrapper {
         }
     }
 
-    table<T>(tableName: string): MysqlTable<T> {
+    table<T>(tableName: string): Table<T> {
         return this.connection.table<T>(tableName);
     }
 
@@ -119,4 +119,4 @@ class MysqlWrapper {
 
 }
 
-export default MysqlWrapper;
+export default Wrapper;

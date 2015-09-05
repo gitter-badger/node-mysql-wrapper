@@ -37,17 +37,16 @@ db.ready(() => {
      }, (err) => { console.log("ERROR ON FETCHING FINDBY ID: " + err) });
    */
 
-    usersDb.find({ userId: 18, comments: { userId: '=' } }, _users=> {
-
+    usersDb.find({ userId: 18, comments: { userId: '=' } }).then(_users=> { // to get this promise use : .promise()
+        console.log("TEST2: \n");
         var _user = _users[0];
 
-        console.log("TEST2: \n");
+
         console.log(_user.username + " with ");
         console.log(_user.comments.length + " comments ");
         _user.comments.forEach(_comment=> {
             console.log("--------------\n" + _comment.content);
         });
-
     });
 
     usersDb.safeRemove(5620, answer=> {
@@ -78,9 +77,8 @@ db.ready(() => {
     //redefine but keep unchanged rules in table: 
     // usersDb.rules = new wrapper2.SelectQueryRules().from(usersDb.rules).limit(20);  // or wrapper2.SelectQueryRules.build(usersDb.rules).limit(20); now rules will have limit 10 but the order by userId it remains as it is.
   
-    //redefine but keep unchanged rules in find method: (second parameters takes a callback or rules, if it's rules then the third parameter is the callback.)
-      
-    usersDb.find({ yearsOld: 22 }, db.buildRules().from(usersDb.rules).limit(3), (_users) => {
+    //redefine but keep unchanged rules in find method:
+    usersDb.find({ yearsOld: 22 }, (_users) => {
         /* or wrapper2.SelectQueryRules.build(usersDb.rules)... or db.buildRules(usersDb.rules)... or new wrapper2.SelectQueryRules().from(userDb.rules)...  this rules will keep the order by userId (user_id) column.*/
 
         console.log("-------------------------------------------------------");
@@ -89,7 +87,7 @@ db.ready(() => {
 
         });
 
-    });
+    }).limit(3).promise();
     //if no rules setted to find method  it's uses the table's rules ( if exists)
     
     

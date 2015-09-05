@@ -1,18 +1,18 @@
 ﻿/// <reference path="../typings/mysql/mysql.d.ts"/>
 /// <reference path="../typings/bluebird/bluebird.d.ts"/> 
-/// <reference path="./MysqlTable.ts"/> 
+/// <reference path="./Table.ts"/> 
 import * as Mysql from 'mysql';
 import * as Util from 'util';
 import * as Promise from 'bluebird';
 import {EventEmitter} from 'events';
-import MysqlTable from "./MysqlTable";
-import MysqlUtil from "./MysqlUtil";
+import Table from "./Table";
+import Helper from "./Helper";
 
-class MysqlConnection extends EventEmitter {
+class Connection extends EventEmitter {
     connection: Mysql.IConnection;
     eventTypes = ["INSERT", "UPDATE", "REMOVE", "SAVE"];
     tableNamesToUseOnly = [];
-    tables: MysqlTable<any>[] = [];
+    tables: Table<any>[] = [];
 
     constructor(connection: string | Mysql.IConnection) {
         super();
@@ -112,7 +112,7 @@ class MysqlConnection extends EventEmitter {
                                 //means that only to use called, and this table is not in this collection, so don't fetch it.
 
                             } else {
-                                let _table = new MysqlTable(tableObj.TABLE_NAME, this);
+                                let _table = new Table(tableObj.TABLE_NAME, this);
                                 _table.primaryKey = (tableObj.column_name);
 
                                 this.connection.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + this.connection.config.database + "' AND TABLE_NAME = '" + _table.name + "';", (errC: Mysql.IError, ...resultsC: any[]) => {
@@ -217,9 +217,9 @@ class MysqlConnection extends EventEmitter {
         }
     }
 
-    table<T>(tableName: string): MysqlTable<T> {
+    table<T>(tableName: string): Table<T> {
         for (let i = 0; i < this.tables.length; i++) {
-            if (this.tables[i].name === tableName || this.tables[i].name === MysqlUtil.toObjectProperty(tableName)) {
+            if (this.tables[i].name === tableName || this.tables[i].name === Helper.toObjectProperty(tableName)) {
 
                 return this.tables[i];
             }
@@ -230,4 +230,4 @@ class MysqlConnection extends EventEmitter {
 
 }
 
-export default MysqlConnection;
+export default Connection;

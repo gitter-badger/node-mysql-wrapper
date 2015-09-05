@@ -45,7 +45,7 @@ db.ready(() => {
   
     //redefine but keep unchanged rules in find method: (second parameters takes a callback or rules, if it's rules then the third parameter is the callback.)
       
-    usersDb.find({ yearsOld: 22 }, db.buildRules().from(usersDb.rules).limit(3), (_users) => {
+    usersDb.find({ yearsOld: 22 }, (_users) => {
         /* or wrapper2.SelectQueryRules.build(usersDb.rules)... or db.buildRules(usersDb.rules)... or new wrapper2.SelectQueryRules().from(userDb.rules)...  this rules will keep the order by userId (user_id) column.*/
 
         console.log("-------------------------------------------------------");
@@ -54,7 +54,7 @@ db.ready(() => {
 
         });
 
-    });
+    }).limit(3).execute();
     
     
     
@@ -83,7 +83,7 @@ db.ready(() => {
             console.log("--------------\n" + _comment.content);
         });
 
-    });
+    }).execute();
 
     usersDb.safeRemove(5620, answer=> {
         console.log("TEST 3: \n");

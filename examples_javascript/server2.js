@@ -20,9 +20,9 @@ db.ready(function () {
          console.log("FOUND USER WITH USERNAME: " + _user.username);
      }, (err) => { console.log("ERROR ON FETCHING FINDBY ID: " + err) });
    */
-    usersDb.find({ userId: 18, comments: { userId: '=' } }, function (_users) {
-        var _user = _users[0];
+    usersDb.find({ userId: 18, comments: { userId: '=' } }).then(function (_users) {
         console.log("TEST2: \n");
+        var _user = _users[0];
         console.log(_user.username + " with ");
         console.log(_user.comments.length + " comments ");
         _user.comments.forEach(function (_comment) {
@@ -49,14 +49,14 @@ db.ready(function () {
     // or usersDb.rules = new wrapper2.SelectQueryRules().limit(10).orderBy("userId",true);//or wrapper2.SelectQueryRules.build().... db.newTableRules(usersDb.name)... //or  db.newTableRules(usersDb.name)...
     //redefine but keep unchanged rules in table: 
     // usersDb.rules = new wrapper2.SelectQueryRules().from(usersDb.rules).limit(20);  // or wrapper2.SelectQueryRules.build(usersDb.rules).limit(20); now rules will have limit 10 but the order by userId it remains as it is.
-    //redefine but keep unchanged rules in find method: (second parameters takes a callback or rules, if it's rules then the third parameter is the callback.)
-    usersDb.find({ yearsOld: 22 }, db.buildRules().from(usersDb.rules).limit(3), function (_users) {
+    //redefine but keep unchanged rules in find method:
+    usersDb.find({ yearsOld: 22 }, function (_users) {
         /* or wrapper2.SelectQueryRules.build(usersDb.rules)... or db.buildRules(usersDb.rules)... or new wrapper2.SelectQueryRules().from(userDb.rules)...  this rules will keep the order by userId (user_id) column.*/
         console.log("-------------------------------------------------------");
         _users.forEach(function (_user) {
             console.log(_user.userId + " " + _user.username + " found with limit 3 but this doesnt...");
         });
-    });
+    }).limit(3).promise();
     //if no rules setted to find method  it's uses the table's rules ( if exists)
 });
 var httpPort = 1193; //config.get('Server.port') || 1193;

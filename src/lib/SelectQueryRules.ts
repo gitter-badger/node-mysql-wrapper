@@ -1,11 +1,9 @@
-import MysqlUtil from "./MysqlUtil";
-
+import Helper from "./Helper";
 
 export class SelectQueryRules {
 	public orderByClause: string = "";
 	public groupByClause: string = "";
 	public limitClause: string = "";
-
 
 	static build(): SelectQueryRules;
 	static build(parentRule?: SelectQueryRules): SelectQueryRules {
@@ -20,7 +18,7 @@ export class SelectQueryRules {
 		if (!columnKey || (columnKey !== undefined && columnKey === "")) {
 			this.orderByClause = "";
 		} else {
-			this.orderByClause = " ORDER BY " + MysqlUtil.toRowProperty(columnKey) + (descending ? " DESC " : "");
+			this.orderByClause = " ORDER BY " + Helper.toRowProperty(columnKey) + (descending ? " DESC " : "");
 		}
 		return this;
     }
@@ -76,6 +74,8 @@ export class SelectQueryRules {
 		}
 		return this;
 	}
+
+
 
     toString(): string {
 		let afterWhere = "";

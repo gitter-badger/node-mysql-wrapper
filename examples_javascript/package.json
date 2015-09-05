@@ -11,6 +11,6 @@
     "express": "^4.13.0",
     "morgan": "^1.6.1",
     "mysql": "^2.8.0",
-    "node-mysql-wrapper": "^2.0.5"
+    "node-mysql-wrapper": "^2.2.0"
   }
 }

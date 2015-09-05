@@ -1,4 +1,4 @@
-var MysqlUtil_1 = require("./MysqlUtil");
+var Helper_1 = require("./Helper");
 var SelectQueryRules = (function () {
     function SelectQueryRules() {
         this.orderByClause = "";
@@ -17,7 +17,7 @@ var SelectQueryRules = (function () {
             this.orderByClause = "";
         }
         else {
-            this.orderByClause = " ORDER BY " + MysqlUtil_1.default.toRowProperty(columnKey) + (descending ? " DESC " : "");
+            this.orderByClause = " ORDER BY " + Helper_1.default.toRowProperty(columnKey) + (descending ? " DESC " : "");
         }
         return this;
     };

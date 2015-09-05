@@ -1,16 +1,17 @@
-var MysqlUtil_1 = require("./MysqlUtil");
+var Promise = require('bluebird');
+var Helper_1 = require("./Helper");
+var SelectQuery_1 = require("./SelectQuery");
 var SelectQueryRules_1 = require("./SelectQueryRules");
 var CriteriaBuilder_1 = require("./CriteriaBuilder");
-var Promise = require('bluebird');
 exports.EQUAL_TO_PROPERTY_SYMBOL = '=';
-var MysqlTable = (function () {
-    function MysqlTable(tableName, connection) {
+var Table = (function () {
+    function Table(tableName, connection) {
         this._name = tableName;
         this._connection = connection;
         this._criteriaBuilder = new CriteriaBuilder_1.CriteriaBuilder(this);
         this._rules = new SelectQueryRules_1.SelectQueryRules();
     }
-    Object.defineProperty(MysqlTable.prototype, "columns", {
+    Object.defineProperty(Table.prototype, "columns", {
         get: function () {
             return this._columns;
         },
@@ -20,7 +21,7 @@ var MysqlTable = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(MysqlTable.prototype, "primaryKey", {
+    Object.defineProperty(Table.prototype, "primaryKey", {
         get: function () {
             return this._primaryKey;
         },
@@ -30,21 +31,21 @@ var MysqlTable = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(MysqlTable.prototype, "connection", {
+    Object.defineProperty(Table.prototype, "connection", {
         get: function () {
             return this._connection;
         },
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(MysqlTable.prototype, "name", {
+    Object.defineProperty(Table.prototype, "name", {
         get: function () {
             return this._name;
         },
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(MysqlTable.prototype, "rules", {
+    Object.defineProperty(Table.prototype, "rules", {
         get: function () {
             return this._rules;
         },
@@ -54,27 +55,34 @@ var MysqlTable = (function () {
         enumerable: true,
         configurable: true
     });
-    MysqlTable.prototype.on = function (evtType, callback) {
+    Object.defineProperty(Table.prototype, "criteriaBuilder", {
+        get: function () {
+            return this._criteriaBuilder;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Table.prototype.on = function (evtType, callback) {
         this.connection.watch(this.name, evtType, callback);
     };
-    MysqlTable.prototype.off = function (evtType, callbackToRemove) {
+    Table.prototype.off = function (evtType, callbackToRemove) {
         this.connection.unwatch(this.name, evtType, callbackToRemove);
     };
-    MysqlTable.prototype.has = function (extendedFunctionName) {
+    Table.prototype.has = function (extendedFunctionName) {
         return this[extendedFunctionName] !== undefined;
     };
-    MysqlTable.prototype.extend = function (functionName, theFunction) {
+    Table.prototype.extend = function (functionName, theFunction) {
         var isFunction = !!(theFunction && theFunction.constructor && theFunction.call && theFunction.apply);
         if (isFunction) {
             this[functionName] = theFunction;
         }
     };
-    MysqlTable.prototype.objectFromRow = function (row) {
+    Table.prototype.objectFromRow = function (row) {
         var _this = this;
         var obj = {};
-        MysqlUtil_1.default.forEachKey(row, function (key) {
+        Helper_1.default.forEachKey(row, function (key) {
             if (_this.columns.indexOf(key) !== -1 || _this.primaryKey === key) {
-                obj[MysqlUtil_1.default.toObjectProperty(key)] = row[key];
+                obj[Helper_1.default.toObjectProperty(key)] = row[key];
             }
             else {
                 obj[key] = row[key];
@@ -82,24 +90,24 @@ var MysqlTable = (function () {
         });
         return obj;
     };
-    MysqlTable.prototype.rowFromObject = function (obj) {
+    Table.prototype.rowFromObject = function (obj) {
         var _this = this;
         var row = {};
-        MysqlUtil_1.default.forEachKey(obj, function (key) {
-            var rowKey = MysqlUtil_1.default.toRowProperty(key);
+        Helper_1.default.forEachKey(obj, function (key) {
+            var rowKey = Helper_1.default.toRowProperty(key);
             if (_this.columns.indexOf(rowKey) !== -1 || _this.primaryKey === rowKey) {
                 row[rowKey] = obj[key];
             }
         });
         return row;
     };
-    MysqlTable.prototype.getRowAsArray = function (jsObject) {
+    Table.prototype.getRowAsArray = function (jsObject) {
         var _this = this;
         var _arr = new Array();
         var _columns = [];
         var _values = [];
-        MysqlUtil_1.default.forEachKey(jsObject, function (key) {
-            var _col = MysqlUtil_1.default.toRowProperty(key);
+        Helper_1.default.forEachKey(jsObject, function (key) {
+            var _col = Helper_1.default.toRowProperty(key);
             if (_this.columns.indexOf(_col) !== -1) {
                 _columns.push(_col);
                 _values.push(jsObject[key]);
@@ -109,9 +117,9 @@ var MysqlTable = (function () {
         _arr.push(_values);
         return _arr;
     };
-    MysqlTable.prototype.getPrimaryKeyValue = function (jsObject) {
+    Table.prototype.getPrimaryKeyValue = function (jsObject) {
         var returnValue = 0;
-        var primaryKeyObjectProperty = MysqlUtil_1.default.toObjectProperty(this.primaryKey);
+        var primaryKeyObjectProperty = Helper_1.default.toObjectProperty(this.primaryKey);
         if (jsObject) {
             if (jsObject.constructor === Array) {
             }
@@ -127,7 +135,7 @@ var MysqlTable = (function () {
         }
         return returnValue;
     };
-    MysqlTable.prototype.parseQueryResult = function (result, criteria) {
+    Table.prototype.parseQueryResult = function (result, criteria) {
         var _this = this;
         return new Promise(function (resolve) {
             var obj = _this.objectFromRow(result);
@@ -135,14 +143,14 @@ var MysqlTable = (function () {
                 var tableFindPromiseList = [];
                 criteria.tables.forEach(function (tableName) {
                     var table = _this.connection.table(tableName);
-                    var tablePropertyName = MysqlUtil_1.default.toObjectProperty(tableName);
-                    var criteriaJsObject = MysqlUtil_1.default.copyObject(criteria.rawCriteriaObject[tablePropertyName]);
-                    MysqlUtil_1.default.forEachKey(criteriaJsObject, function (propertyName) {
+                    var tablePropertyName = Helper_1.default.toObjectProperty(tableName);
+                    var criteriaJsObject = Helper_1.default.copyObject(criteria.rawCriteriaObject[tablePropertyName]);
+                    Helper_1.default.forEachKey(criteriaJsObject, function (propertyName) {
                         if (criteriaJsObject[propertyName] === exports.EQUAL_TO_PROPERTY_SYMBOL) {
-                            criteriaJsObject[propertyName] = result[MysqlUtil_1.default.toRowProperty(propertyName)];
+                            criteriaJsObject[propertyName] = result[Helper_1.default.toRowProperty(propertyName)];
                         }
                     });
-                    var tableFindPromise = table.find(criteriaJsObject);
+                    var tableFindPromise = table.find(criteriaJsObject).promise();
                     tableFindPromise.then(function (childResults) {
                         obj[tablePropertyName] = [];
                         childResults.forEach(function (childResult) {
@@ -160,40 +168,10 @@ var MysqlTable = (function () {
             }
         });
     };
-    MysqlTable.prototype.find = function (criteriaRawJsObject, rulesOrCallback, secondCallbackIfNoFirst) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var criteria = _this._criteriaBuilder.build(criteriaRawJsObject);
-            var queryRules = _this._rules.toString();
-            if (rulesOrCallback !== undefined && !MysqlUtil_1.default.isFunction(rulesOrCallback)) {
-                queryRules = rulesOrCallback.toString();
-            }
-            var query = "SELECT * FROM " + _this.name + criteria.whereClause + queryRules;
-            _this.connection.query(query, function (error, results) {
-                if (error || !results) {
-                    reject(error + ' Error. On find');
-                }
-                var parseQueryResultsPromises = [];
-                results.forEach(function (result) {
-                    parseQueryResultsPromises.push(_this.parseQueryResult(result, criteria));
-                });
-                Promise.all(parseQueryResultsPromises).then(function (_objects) {
-                    var callback = undefined;
-                    if (rulesOrCallback !== undefined && MysqlUtil_1.default.isFunction(rulesOrCallback)) {
-                        callback = rulesOrCallback;
-                    }
-                    else if (secondCallbackIfNoFirst !== undefined) {
-                        callback = secondCallbackIfNoFirst;
-                    }
-                    if (callback !== undefined) {
-                        callback(_objects);
-                    }
-                    resolve(_objects);
-                });
-            });
-        });
+    Table.prototype.find = function (criteriaRawJsObject, callback) {
+        return new SelectQuery_1.default(this, criteriaRawJsObject, callback);
     };
-    MysqlTable.prototype.findById = function (id, callback) {
+    Table.prototype.findById = function (id, callback) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var criteria = {};
@@ -206,20 +184,10 @@ var MysqlTable = (function () {
             }).catch(function (err) { return reject(err); });
         });
     };
-    MysqlTable.prototype.findAll = function (rulesOrCallback, secondCallbackIfNoFirst) {
-        if (rulesOrCallback !== undefined && !MysqlUtil_1.default.isFunction(rulesOrCallback)) {
-            var _rules = rulesOrCallback;
-            return this.find({}, _rules, secondCallbackIfNoFirst);
-        }
-        else if (rulesOrCallback !== undefined) {
-            var _cb = rulesOrCallback;
-            return this.find({}, _cb);
-        }
-        else {
-            return this.find({});
-        }
+    Table.prototype.findAll = function (callback) {
+        return this.find({}, callback);
     };
-    MysqlTable.prototype.save = function (criteriaRawJsObject, callback) {
+    Table.prototype.save = function (criteriaRawJsObject, callback) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var primaryKeyValue = _this.getPrimaryKeyValue(criteriaRawJsObject);
@@ -251,7 +219,7 @@ var MysqlTable = (function () {
                     if (err) {
                         reject(err);
                     }
-                    var primaryKeyJsObjectProperty = MysqlUtil_1.default.toObjectProperty(_this.primaryKey);
+                    var primaryKeyJsObjectProperty = Helper_1.default.toObjectProperty(_this.primaryKey);
                     obj[primaryKeyJsObjectProperty] = result.insertId;
                     primaryKeyValue = result.insertId;
                     _this.connection.notice(_this.name, _query, obj);
@@ -263,7 +231,7 @@ var MysqlTable = (function () {
             }
         });
     };
-    MysqlTable.prototype.safeRemove = function (id, callback) {
+    Table.prototype.safeRemove = function (id, callback) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var _query = "DELETE FROM " + _this.name + " WHERE " + _this.primaryKey + " = " + id;
@@ -280,7 +248,7 @@ var MysqlTable = (function () {
             });
         });
     };
-    MysqlTable.prototype.remove = function (criteriaRawJsObject, callback) {
+    Table.prototype.remove = function (criteriaRawJsObject, callback) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var primaryKeyValue = _this.getPrimaryKeyValue(criteriaRawJsObject);
@@ -314,7 +282,7 @@ var MysqlTable = (function () {
             }
         });
     };
-    return MysqlTable;
+    return Table;
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = MysqlTable;
+exports.default = Table;

@@ -1,7 +1,7 @@
-var MysqlUtil = (function () {
-    function MysqlUtil() {
+var Helper = (function () {
+    function Helper() {
     }
-    MysqlUtil.copyObject = function (object) {
+    Helper.copyObject = function (object) {
         var objectCopy = {};
         for (var key in object) {
             if (object.hasOwnProperty(key)) {
@@ -10,13 +10,13 @@ var MysqlUtil = (function () {
         }
         return objectCopy;
     };
-    MysqlUtil.toObjectProperty = function (columnKey) {
+    Helper.toObjectProperty = function (columnKey) {
         return columnKey.replace(/(_.)/g, function (x) { return x[1].toUpperCase(); });
     };
-    MysqlUtil.toRowProperty = function (objectKey) {
+    Helper.toRowProperty = function (objectKey) {
         return objectKey.replace(/([A-Z]+)/g, "_$1").replace(/^_/, "").toLowerCase();
     };
-    MysqlUtil.forEachValue = function (map, callback) {
+    Helper.forEachValue = function (map, callback) {
         var result;
         for (var id in map) {
             if ((result = callback(map[id])))
@@ -24,7 +24,7 @@ var MysqlUtil = (function () {
         }
         return result;
     };
-    MysqlUtil.forEachKey = function (map, callback) {
+    Helper.forEachKey = function (map, callback) {
         var result;
         for (var id in map) {
             if ((result = callback(id)))
@@ -32,11 +32,11 @@ var MysqlUtil = (function () {
         }
         return result;
     };
-    MysqlUtil.isFunction = function (functionToCheck) {
+    Helper.isFunction = function (functionToCheck) {
         var getType = {};
         return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
     };
-    return MysqlUtil;
+    return Helper;
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = MysqlUtil;
+exports.default = Helper;

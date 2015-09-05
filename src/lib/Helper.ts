@@ -2,7 +2,7 @@
     [index: string]: T;
 }
 
-class MysqlUtil {
+class Helper {
     constructor() { }
 
     static copyObject<T>(object: T): T {
@@ -51,4 +51,4 @@ class MysqlUtil {
 
 }
 
-export default MysqlUtil;
+export default Helper;

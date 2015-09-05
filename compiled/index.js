@@ -1,5 +1,5 @@
-var MysqlConnection_1 = require("./lib/MysqlConnection");
-var MysqlWrapper_1 = require("./lib/MysqlWrapper");
+var Connection_1 = require("./lib/Connection");
+var Wrapper_1 = require("./lib/Wrapper");
 var SelectQueryRules_1 = require("./lib/SelectQueryRules");
 if (Function.prototype["name"] === undefined) {
     Object.defineProperty(Function.prototype, 'name', {
@@ -13,8 +13,8 @@ function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection) {
     for (var _i = 1; _i < arguments.length; _i++) {
         useTables[_i - 1] = arguments[_i];
     }
-    var mysqlCon = new MysqlConnection_1.default(mysqlUrlOrObjectOrMysqlAlreadyConnection);
-    var mysqlWrapper = new MysqlWrapper_1.default(mysqlCon);
+    var mysqlCon = new Connection_1.default(mysqlUrlOrObjectOrMysqlAlreadyConnection);
+    var mysqlWrapper = new Wrapper_1.default(mysqlCon);
     if (useTables) {
         mysqlWrapper.useOnly(useTables);
     }

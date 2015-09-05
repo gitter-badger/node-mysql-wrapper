@@ -1,11 +1,12 @@
-﻿import MysqlTable from "./MysqlTable";
-import MysqlUtil from "./MysqlUtil";
+﻿import Table from "./Table";
+import Helper from "./Helper";
 
 export interface ICriteria {
     rawCriteriaObject: any;
     tables: string[];
     noDatabaseProperties: string[];
     whereClause: string;
+
 }
 
 export class Criteria implements ICriteria {
@@ -15,22 +16,22 @@ export class Criteria implements ICriteria {
 }
 
 export class CriteriaBuilder<T> {
-    private _table: MysqlTable<T>;
+    private _table: Table<T>;
 
-    
-    constructor(table: MysqlTable<T>) {
+
+    constructor(table: Table<T>) {
         this._table = table;
     }
-    
+
     build(rawCriteriaObject: any): Criteria {
         let colsToSearch = [];
         let tablesToSearch = [];
         let noDbProperties = [];
         let whereParameterStr = "";
 
-        MysqlUtil.forEachKey(rawCriteriaObject, (objectKey) => {
+        Helper.forEachKey(rawCriteriaObject, (objectKey) => {
 
-            let colName = MysqlUtil.toRowProperty(objectKey);
+            let colName = Helper.toRowProperty(objectKey);
 
             if (this._table.columns.indexOf(colName) !== -1 || this._table.primaryKey === colName) {
                 colsToSearch.push(colName + " = " + this._table.connection.escape(rawCriteriaObject[objectKey]));

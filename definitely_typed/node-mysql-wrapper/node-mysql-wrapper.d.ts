@@ -17,7 +17,7 @@ declare module "node-mysql-wrapper" {
         [index: string]: T;
     }
 
-    class MysqlUtil {
+    class Helper {
         /** 
          * Callback like forEach
          * @name valueCallback
@@ -117,7 +117,7 @@ declare module "node-mysql-wrapper" {
 
     class CriteriaBuilder<T> {
         private _table;
-        constructor(table: MysqlTable<T>);
+        constructor(table: Table<T>);
         
         /**
          * Builds the criteria raw object to Criteria object.
@@ -127,8 +127,6 @@ declare module "node-mysql-wrapper" {
          */
         build(rawCriteriaObject: any): Criteria;
     }
-
-
 
     class SelectQueryRules {
         orderByClause: string;
@@ -152,14 +150,46 @@ declare module "node-mysql-wrapper" {
         clearLimit(): SelectQueryRules;
 
         clear(): SelectQueryRules;
-        
+
         from(parentRule: SelectQueryRules): SelectQueryRules;
 
         toString(): string;
     }
 
+    class SelectQuery<T> {
 
-    class MysqlConnection extends EventEmitter {
+        private _rules: SelectQueryRules;
+        private _table: Table<T>;
+        private _criteriaRawJsObject: any;
+        private _callback: (_results: T[]) => any;
+        private callback: (resolve?: (thenableOrResult?: T | Promise.Thenable<T>) => void, reject?: (error?: any) => void) => void;
+
+        constructor(table: Table<T>, criteriaRawJsObject: any, callback?: (_results: T[]) => any);
+
+        orderBy(columnKey: string, descending?: boolean): SelectQuery<T>;
+
+        groupBy(columnKey: string): SelectQuery<T>;
+
+        limit(limitRowsOrStart: number, limitEnd?: number): SelectQuery<T>;
+
+        /**
+        * Executes the select and returns the Promise.
+        */
+        promise(): Promise<T[]>;
+        
+        /**
+         * Exactly the same thing as promise().
+         * Executes the select and returns the Promise.
+         */
+        execute(): Promise<T[]>;
+
+        then(onFulfill: (value: any[]) => any|Promise.Thenable<any>): Promise<any>;
+        then<U>(onFulfill: (value: T[]) => U|Promise.Thenable<U>, onReject: (error: any) => Promise.Thenable<U>, onProgress?: (note: any) => any): Promise<U>;
+        then<U>(onFulfill: (value: T[]) => U|Promise.Thenable<U>, onReject?: (error: any) => U, onProgress?: (note: any) => any): Promise<U>;
+
+    }
+
+    class Connection extends EventEmitter {
         
         /**
          * The real database connection socket.
@@ -179,7 +209,7 @@ declare module "node-mysql-wrapper" {
         /**
          * All tables {MysqlTable} inside this connection's database.
          */
-        tables: MysqlTable<any>[];
+        tables: Table<any>[];
 
         constructor(connection: string | Mysql.IConnection);
         
@@ -291,17 +321,17 @@ declare module "node-mysql-wrapper" {
          * @returnType {MysqlTable}
          * @return {MysqlTable}
          */
-        table<T>(tableName: string): MysqlTable<T>;
+        table<T>(tableName: string): Table<T>;
     }
 
-    class MysqlTable<T> {
+    class Table<T> {
         private _name;
         private _connection;
         private _columns;
         private _primaryKey;
         private _criteriaBuilder;
         private _rules;
-        constructor(tableName: string, connection: MysqlConnection);
+        constructor(tableName: string, connection: Connection);
         
         /**
          * An array of all columns' names inside this table.
@@ -316,7 +346,7 @@ declare module "node-mysql-wrapper" {
         /**
          * The MysqlConnection object which this MysqlTable belongs. 
          */
-        connection: MysqlConnection;
+        connection: Connection;
         
         /**
          * The real database name of the table. Autofilled by library. 
@@ -400,19 +430,15 @@ declare module "node-mysql-wrapper" {
         /**
          * 
          */
-        find(criteriaRawJsObject: any): Promise<T[]>; // only criteria and promise
-        find(criteriaRawJsObject: any, callback: ((_results: T[]) => any)): Promise<T[]>; // only callback
-        find(criteriaRawJsObject: any, rules: SelectQueryRules, callback: ((_results: T[]) => any)): Promise<T[]>; //  rules and after callback
-        find(criteriaRawJsObject: any, rules: SelectQueryRules): Promise<T[]>; // only  rules
-        find(criteriaRawJsObject: any, rulesOrCallback?: SelectQueryRules | ((_results: T[]) => any), secondCallbackIfNoFirst?: (_results: T[]) => any): Promise<T[]>;
+        find(criteriaRawJsObject: any): SelectQuery<T>; // only criteria 
+        find(criteriaRawJsObject: any, callback: ((_results: T[]) => any)): SelectQuery<T>; // criteria and callback
+        find(criteriaRawJsObject: any, callback?: (_results: T[]) => any): SelectQuery<T>;
 
         findById(id: number|string): Promise<T>; // without callback
         findById(id: number | string, callback?: (result: T) => any): Promise<T>;
 
-        findAll(): Promise<T[]>; // only criteria and promise
-        findAll(callback: ((_results: T[]) => any)): Promise<T[]>; // only callback
-        findAll(rules: SelectQueryRules, callback: ((_results: T[]) => any)): Promise<T[]>; //  rules and after callback
-        findAll(rulesOrCallback?: SelectQueryRules | ((_results: T[]) => any), secondCallbackIfNoFirst?: (_results: T[]) => any): Promise<T[]>;
+        findAll(): SelectQuery<T>; // without callback
+        findAll(callback?: (_results: T[]) => any): SelectQuery<T>;
 
         save(criteriaRawJsObject: any): Promise<any>; //without callback
         save(criteriaRawJsObject: any, callback?: (_result: any) => any): Promise<any>;
@@ -442,12 +468,12 @@ declare module "node-mysql-wrapper" {
         }>;
     }
 
-    class MysqlWrapper {
-        connection: MysqlConnection;
+    class Wrapper {
+        connection: Connection;
         readyListenerCallbacks: Function[];
-        constructor(connection?: MysqlConnection);
+        constructor(connection?: Connection);
         static when(..._promises: Promise<any>[]): Promise<any>;
-        setConnection(connection: MysqlConnection): void;
+        setConnection(connection: Connection): void;
             
         /**
          * Force to use/fetch information from only certain of database's tables, otherwise all database's tables information will be fetched.
@@ -459,7 +485,7 @@ declare module "node-mysql-wrapper" {
 
         has(tableName: string, functionName?: string): boolean;
         ready(callback: () => void): void;
-        table<T>(tableName: string): MysqlTable<T>;
+        table<T>(tableName: string): Table<T>;
         noticeReady(): void;
         removeReadyListener(callback: () => void): void;
         query(queryStr: string, callback: (err: Mysql.IError, results: any) => any, queryArguments?: any[]): void;
@@ -484,5 +510,5 @@ declare module "node-mysql-wrapper" {
         buildRules(parentRules?: SelectQueryRules): SelectQueryRules;
     }
 
-    function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection: Mysql.IConnection | string, ...useTables: any[]): MysqlWrapper;
+    function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection: Mysql.IConnection | string, ...useTables: any[]): Wrapper;
 }

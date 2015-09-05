@@ -21,11 +21,13 @@
     "./src/index.ts",
     "./src/lib/CriteriaBuilder.ts",
     "./src/lib/SelectQueryRules.ts",
-    "./src/lib/MysqlConnection.ts",
-    "./src/lib/MysqlTable.ts",
-    "./src/lib/MysqlUtil.ts",
-    "./src/lib/MysqlWrapper.ts"
-    
+    "./src/lib/SelectQuery.ts",
+    "./src/lib/Connection.ts",
+    "./src/lib/Table.ts",
+    "./src/lib/Helper.ts",
+    "./src/lib/Wrapper.ts"
   ],
-  "exclude": [ "./src/typings" ]
+  "exclude": [
+    "./src/typings"
+  ]
 }

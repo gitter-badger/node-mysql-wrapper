@@ -5,22 +5,22 @@ var __extends = (this && this.__extends) || function (d, b) {
 };
 /// <reference path="../typings/mysql/mysql.d.ts"/>
 /// <reference path="../typings/bluebird/bluebird.d.ts"/> 
-/// <reference path="./MysqlTable.ts"/> 
+/// <reference path="./Table.ts"/> 
 var Mysql = require('mysql');
 var Promise = require('bluebird');
 var events_1 = require('events');
-var MysqlTable_1 = require("./MysqlTable");
-var MysqlUtil_1 = require("./MysqlUtil");
-var MysqlConnection = (function (_super) {
-    __extends(MysqlConnection, _super);
-    function MysqlConnection(connection) {
+var Table_1 = require("./Table");
+var Helper_1 = require("./Helper");
+var Connection = (function (_super) {
+    __extends(Connection, _super);
+    function Connection(connection) {
         _super.call(this);
         this.eventTypes = ["INSERT", "UPDATE", "REMOVE", "SAVE"];
         this.tableNamesToUseOnly = [];
         this.tables = [];
         this.create(connection);
     }
-    MysqlConnection.prototype.create = function (connection) {
+    Connection.prototype.create = function (connection) {
         if (typeof connection === "string" || connection instanceof String) {
             this.attach(Mysql.createConnection(connection));
         }
@@ -28,10 +28,10 @@ var MysqlConnection = (function (_super) {
             this.attach(connection);
         }
     };
-    MysqlConnection.prototype.attach = function (connection) {
+    Connection.prototype.attach = function (connection) {
         this.connection = connection;
     };
-    MysqlConnection.prototype.end = function (callback) {
+    Connection.prototype.end = function (callback) {
         var _this = this;
         this.eventTypes.forEach(function (_evt) {
             _this.removeAllListeners(_evt);
@@ -40,14 +40,14 @@ var MysqlConnection = (function (_super) {
             callback(err);
         });
     };
-    MysqlConnection.prototype.destroy = function () {
+    Connection.prototype.destroy = function () {
         var _this = this;
         this.eventTypes.forEach(function (_evt) {
             _this.removeAllListeners(_evt);
         });
         this.connection.destroy();
     };
-    MysqlConnection.prototype.link = function (readyCallback) {
+    Connection.prototype.link = function (readyCallback) {
         var _this = this;
         return new Promise(function (resolve, reject) {
             var callback = readyCallback ||
@@ -69,7 +69,7 @@ var MysqlConnection = (function (_super) {
             }
         });
     };
-    MysqlConnection.prototype.useOnly = function () {
+    Connection.prototype.useOnly = function () {
         var tables = [];
         for (var _i = 0; _i < arguments.length; _i++) {
             tables[_i - 0] = arguments[_i];
@@ -86,7 +86,7 @@ var MysqlConnection = (function (_super) {
             }
         }
     };
-    MysqlConnection.prototype.fetchDatabaseInfornation = function () {
+    Connection.prototype.fetchDatabaseInfornation = function () {
         //Ta kanw ola edw gia na doulepsei to def.resolve kai na einai etoimo olo to module molis ola ta tables kai ola ta columns dhlwthoun.
         var _this = this;
         return new Promise(function (resolve, reject) {
@@ -103,7 +103,7 @@ var MysqlConnection = (function (_super) {
                         if (_this.tableNamesToUseOnly.length > 0 && _this.tableNamesToUseOnly.indexOf(tableObj.TABLE_NAME) !== -1) {
                         }
                         else {
-                            var _table = new MysqlTable_1.default(tableObj.TABLE_NAME, _this);
+                            var _table = new Table_1.default(tableObj.TABLE_NAME, _this);
                             _table.primaryKey = (tableObj.column_name);
                             _this.connection.query("SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = '" + _this.connection.config.database + "' AND TABLE_NAME = '" + _table.name + "';", function (errC) {
                                 var resultsC = [];
@@ -135,10 +135,10 @@ var MysqlConnection = (function (_super) {
             });
         });
     };
-    MysqlConnection.prototype.escape = function (val) {
+    Connection.prototype.escape = function (val) {
         return this.connection.escape(val);
     };
-    MysqlConnection.prototype.notice = function (tableWhichCalled, queryStr, parsedResults) {
+    Connection.prototype.notice = function (tableWhichCalled, queryStr, parsedResults) {
         var evtType;
         if (queryStr.indexOf(' ') === -1) {
             evtType = undefined;
@@ -156,7 +156,7 @@ var MysqlConnection = (function (_super) {
             this.emit(tableWhichCalled.toUpperCase() + "." + evtType, parsedResults);
         }
     };
-    MysqlConnection.prototype.watch = function (tableName, evtType, callback) {
+    Connection.prototype.watch = function (tableName, evtType, callback) {
         if (Array.isArray(evtType)) {
             for (var i = 0; i < evtType.length; i++) {
                 var _theEventType = evtType[i].toUpperCase();
@@ -172,13 +172,13 @@ var MysqlConnection = (function (_super) {
             }
         }
     };
-    MysqlConnection.prototype.unwatch = function (tableName, evtType, callbackToRemove) {
+    Connection.prototype.unwatch = function (tableName, evtType, callbackToRemove) {
         evtType = evtType.toUpperCase();
         if (this.eventTypes.indexOf(evtType) !== -1) {
             this.removeListener(tableName.toUpperCase() + "." + evtType, callbackToRemove);
         }
     };
-    MysqlConnection.prototype.query = function (queryStr, callback, queryArguments) {
+    Connection.prototype.query = function (queryStr, callback, queryArguments) {
         if (queryArguments) {
             this.connection.query(queryStr, queryArguments, function (err, results) {
                 callback(err, results);
@@ -190,15 +190,15 @@ var MysqlConnection = (function (_super) {
             });
         }
     };
-    MysqlConnection.prototype.table = function (tableName) {
+    Connection.prototype.table = function (tableName) {
         for (var i = 0; i < this.tables.length; i++) {
-            if (this.tables[i].name === tableName || this.tables[i].name === MysqlUtil_1.default.toObjectProperty(tableName)) {
+            if (this.tables[i].name === tableName || this.tables[i].name === Helper_1.default.toObjectProperty(tableName)) {
                 return this.tables[i];
             }
         }
         return undefined;
     };
-    return MysqlConnection;
+    return Connection;
 })(events_1.EventEmitter);
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.default = MysqlConnection;
+exports.default = Connection;

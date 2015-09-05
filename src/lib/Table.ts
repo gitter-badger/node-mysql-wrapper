@@ -1,20 +1,23 @@
-﻿import MysqlConnection from "./MysqlConnection";
-import MysqlUtil from "./MysqlUtil";
+﻿import * as Promise from 'bluebird';
+
+import Connection from "./Connection";
+import Helper from "./Helper";
+import SelectQuery from "./SelectQuery";
 import {SelectQueryRules} from "./SelectQueryRules";
 import {ICriteria, CriteriaBuilder} from "./CriteriaBuilder";
 
-import * as Promise from 'bluebird';
 export var EQUAL_TO_PROPERTY_SYMBOL = '=';
 
-class MysqlTable<T> {
+
+class Table<T> {
     private _name: string;
-    private _connection: MysqlConnection;
+    private _connection: Connection;
     private _columns: string[];
     private _primaryKey: string;
     private _criteriaBuilder: CriteriaBuilder<T>;
     private _rules: SelectQueryRules;
 
-    constructor(tableName: string, connection: MysqlConnection) {
+    constructor(tableName: string, connection: Connection) {
         this._name = tableName;
         this._connection = connection;
         this._criteriaBuilder = new CriteriaBuilder<T>(this);
@@ -37,7 +40,7 @@ class MysqlTable<T> {
         return this._primaryKey;
     }
 
-    get connection(): MysqlConnection {
+    get connection(): Connection {
         return this._connection;
     }
 
@@ -50,6 +53,10 @@ class MysqlTable<T> {
     }
     get rules(): SelectQueryRules {
         return this._rules;
+    }
+
+    get criteriaBuilder(): CriteriaBuilder<T> {
+        return this._criteriaBuilder;
     }
 
     on(evtType: string, callback: (parsedResults: any[]) => void): void {
@@ -75,9 +82,9 @@ class MysqlTable<T> {
 
     objectFromRow(row: any): any {
         let obj = {};
-        MysqlUtil.forEachKey(row, (key) => {
+        Helper.forEachKey(row, (key) => {
             if (this.columns.indexOf(key) !== -1 || this.primaryKey === key) {
-                obj[MysqlUtil.toObjectProperty(key)] = row[key];
+                obj[Helper.toObjectProperty(key)] = row[key];
             } else {
                 obj[key] = row[key]; //for no db properties.
             }
@@ -87,8 +94,8 @@ class MysqlTable<T> {
 
     rowFromObject(obj: any): any {
         let row = {};
-        MysqlUtil.forEachKey(obj, (key) => {
-            let rowKey = MysqlUtil.toRowProperty(key);
+        Helper.forEachKey(obj, (key) => {
+            let rowKey = Helper.toRowProperty(key);
             if (this.columns.indexOf(rowKey) !== -1 || this.primaryKey === rowKey) {
                 row[rowKey] = obj[key];
             }
@@ -101,8 +108,8 @@ class MysqlTable<T> {
         let _columns = [];
         let _values = [];
         //'of' doesnt works for the properties.
-        MysqlUtil.forEachKey(jsObject, (key) => {
-            let _col = MysqlUtil.toRowProperty(key);
+        Helper.forEachKey(jsObject, (key) => {
+            let _col = Helper.toRowProperty(key);
             //only if this key/property of object is actualy a column (except  primary key)
 
             if (this.columns.indexOf(_col) !== -1) {
@@ -123,7 +130,7 @@ class MysqlTable<T> {
 
     getPrimaryKeyValue(jsObject): number|string {
         let returnValue: string|number = 0;
-        let primaryKeyObjectProperty = MysqlUtil.toObjectProperty(this.primaryKey);
+        let primaryKeyObjectProperty = Helper.toObjectProperty(this.primaryKey);
         if (jsObject) {
             if (jsObject.constructor === Array) {
 
@@ -149,15 +156,15 @@ class MysqlTable<T> {
                 //tables to search
                 criteria.tables.forEach((tableName) => {
                     let table = this.connection.table(tableName);
-                    let tablePropertyName = MysqlUtil.toObjectProperty(tableName);
-                    let criteriaJsObject = MysqlUtil.copyObject(criteria.rawCriteriaObject[tablePropertyName]);
-                    MysqlUtil.forEachKey(criteriaJsObject, (propertyName) => {
+                    let tablePropertyName = Helper.toObjectProperty(tableName);
+                    let criteriaJsObject = Helper.copyObject(criteria.rawCriteriaObject[tablePropertyName]);
+                    Helper.forEachKey(criteriaJsObject, (propertyName) => {
                         if (criteriaJsObject[propertyName] === EQUAL_TO_PROPERTY_SYMBOL) {
-                            criteriaJsObject[propertyName] = result[MysqlUtil.toRowProperty(propertyName)];
+                            criteriaJsObject[propertyName] = result[Helper.toRowProperty(propertyName)];
                         }
                     });
-                    let tableFindPromise = table.find(criteriaJsObject);
-
+                    let tableFindPromise = table.find(criteriaJsObject).promise();
+                  
                     tableFindPromise.then((childResults) => {
                         obj[tablePropertyName] = [];
 
@@ -182,60 +189,20 @@ class MysqlTable<T> {
     }
    
     //(Greek-forme)edw exoume tis epiloges: i to kanw na epistrefei kana tablerule i vazw san 3o optional parameter to tablerules, den kserw 9a to dw meta.
-    find(criteriaRawJsObject: any): Promise<T[]>; // only criteria and promise
-    find(criteriaRawJsObject: any, callback: ((_results: T[]) => any)): Promise<T[]>; // only callback
-    find(criteriaRawJsObject: any, rules: SelectQueryRules, callback: ((_results: T[]) => any)): Promise<T[]>; //  rules and after callback
-    find(criteriaRawJsObject: any, rules: SelectQueryRules): Promise<T[]>; // only  rules
-    find(criteriaRawJsObject: any, rulesOrCallback?: SelectQueryRules | ((_results: T[]) => any), secondCallbackIfNoFirst?: (_results: T[]) => any): Promise<T[]> {
-        return new Promise<T[]>((resolve, reject) => {
-
-            let criteria = this._criteriaBuilder.build(criteriaRawJsObject);
-
-            let queryRules = this._rules.toString();
-            if (rulesOrCallback !== undefined && !MysqlUtil.isFunction(rulesOrCallback)) {
-                queryRules = rulesOrCallback.toString();
-
-            }
-            let query = "SELECT * FROM " + this.name + criteria.whereClause + queryRules;
-
-            this.connection.query(query, (error, results: any[]) => {
-                if (error || !results) {
-                    reject(error + ' Error. On find');
-                }
-                let parseQueryResultsPromises = [];
-
-                results.forEach((result) => {
-                    parseQueryResultsPromises.push(this.parseQueryResult(result, criteria));
-
-                });
-
-                Promise.all(parseQueryResultsPromises).then((_objects: T[]) => {
-
-                    let callback = undefined;
-                    if (rulesOrCallback !== undefined && MysqlUtil.isFunction(rulesOrCallback)) {
-                        callback = rulesOrCallback;
-                    } else if (secondCallbackIfNoFirst !== undefined) {
-                        callback = secondCallbackIfNoFirst;
-                    }
-                    if (callback !== undefined) {
-                        callback(_objects);
-                    }
-
-                    resolve(_objects);
-                });
-
-            });
-
-
-        });
+    find(criteriaRawJsObject: any): SelectQuery<T>; // only criteria and promise
+    find(criteriaRawJsObject: any, callback: ((_results: T[]) => any)): SelectQuery<T>; // only callback
+    find(criteriaRawJsObject: any, callback?: (_results: T[]) => any): SelectQuery<T> {
+        return new SelectQuery<T>(this, criteriaRawJsObject, callback);
     }
 
     findById(id: number|string): Promise<T>; // without callback
     findById(id: number|string, callback?: (result: T) => any): Promise<T> {
+       
         return new Promise<T>((resolve, reject) => {
             let criteria = {};
             criteria[this.primaryKey] = id;
-            this.find(criteria).then((results) => {
+          
+            this.find(criteria).then((results) => { ///TODO: isws xreiastei an tuxei error na valw to .promise().then alla nomizw to fixara vazontas to then any sto selectquery 
                 resolve(results[0]);
                 if (callback) {
                     callback(results[0]);
@@ -246,21 +213,9 @@ class MysqlTable<T> {
     }
 
 
-    findAll(): Promise<T[]>; // only criteria and promise
-    findAll(callback: ((_results: T[]) => any)): Promise<T[]>; // only callback
-    findAll(rules: SelectQueryRules, callback: ((_results: T[]) => any)): Promise<T[]>; //  rules and after callback
-    findAll(rulesOrCallback?: SelectQueryRules | ((_results: T[]) => any), secondCallbackIfNoFirst?: (_results: T[]) => any): Promise<T[]> {
-        if (rulesOrCallback !== undefined && !MysqlUtil.isFunction(rulesOrCallback)) {  //it's rules
-            let _rules: SelectQueryRules = <SelectQueryRules> rulesOrCallback;
-            return this.find({}, _rules, secondCallbackIfNoFirst);
-        } else if (rulesOrCallback !== undefined) { //it's the callback
-            let _cb: ((_results: T[]) => any) = <((_results: T[]) => any) > rulesOrCallback;
-            return this.find({}, _cb);
-        } else {
-            //no argument parameters
-            return this.find({});
-        }
-
+    findAll(): SelectQuery<T>; // only criteria and promise
+    findAll(callback?: (_results: T[]) => any): SelectQuery<T> {
+        return this.find({}, callback);
     }
 
     save(criteriaRawJsObject: any): Promise<any>; //without callback
@@ -305,7 +260,7 @@ class MysqlTable<T> {
                     }
                     // jsObject[this.primaryKey] = result.insertId;
 
-                    let primaryKeyJsObjectProperty = MysqlUtil.toObjectProperty(this.primaryKey);
+                    let primaryKeyJsObjectProperty = Helper.toObjectProperty(this.primaryKey);
 
                     obj[primaryKeyJsObjectProperty] = result.insertId;
                     //criteriaRawJsObject[primaryKeyJsObjectProperty] = result.insertId;
@@ -395,4 +350,4 @@ class MysqlTable<T> {
 
 }
 
-export default  MysqlTable;
+export default  Table;

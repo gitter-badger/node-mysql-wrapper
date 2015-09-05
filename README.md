@@ -65,7 +65,7 @@ db.ready(function(){
 		//to destroy the whole connection, its events and its tables use: 
 		db.destroy();
 	
-    }); //or using promises: find({...}).then(function(rowResults){...});
+    }); //or using promises: findById(8).then(function(rowResults){...});
     
 
 });
@@ -183,7 +183,7 @@ console.log('find, findById, findAll, save, remove, safeRemove methods can be ca
 
 usersTable.find({mail:'makis@omakis.com'},function(results){
 
-});
+}).orderBy("userId").execute();
 
 ```
 ## Performing queries 
@@ -192,7 +192,8 @@ usersTable.find({mail:'makis@omakis.com'},function(results){
 
 They are 4 types of method queries, the find/findById/findAll (select), save (insert or update), remove, and safeRemove(deletes only by primary key). All values you pass there are auto-escaped to protect the database from sql injections.
 
-If you don't pass a callback inside method  it returns a promise. Which you can use later.
+If you don't pass a callback inside a  method  it returns a promise, EXCEPT find and findAll which you  can: call .then(results) (pseudo function) and .promise() (or .execute()) in order to get the promise,
+which you can use later.
  
 Column keys are auto converted to object properties, this means that user_id column on database table will be available as userId, same for table names too.
 
@@ -207,12 +208,12 @@ db.table("users").findById(18,function(user){
 db.table("users").find({mail:'makis@ideopod.com'},function(users){
 	console.log("SELECT * FROM users WHERE mail = 'makis@ideopod.com'. results: ";
 	console.dir(users);
-});
+}).limit(10).orderBy("username").execute();
 ```
 
 **Simple 'find all' method** , which is the same as db.table("tablename").find({},callback);
 ```js
-db.table("users").findAll(function(users){ 
+db.table("users").findAll().limit(42).then(function(users){  //.then: executes the query and call the callback.
 	console.log("SELECT * FROM users. results: ");
 	console.dir(users);
 });
@@ -240,7 +241,7 @@ var criteria= {
 db.table("users").find(criteria,function(results){
 	console.log('A lot of queries executed here, you can guess them :)');
 	console.dir(results);
-});
+}).execute(); //or .promise()...
 ```
 
 **Save method**,  Returns a single object, also updates the variable you pass into.
@@ -288,8 +289,8 @@ Also you can **wait for multiple query methods to finish** before you do somethi
 
 ```js
 var findAUser = db.table("users").findById(16);
-var findMoreUsers = db.table("users").find({username: 'a username'});
-var findSomeComments = db.table("comments").find({userId:16});
+var findMoreUsers = db.table("users").find({username: 'a username'}).promise(); //or .execute()
+var findSomeComments = db.table("comments").find({userId:16}).promise(); // or .execute()
 
 //you can pass an array of promises too.
 db.when(findAUser,findMoreUsers,findSomeComments).then(function(results) {
