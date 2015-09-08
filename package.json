@@ -13,7 +13,10 @@
   "devDependencies": {
     "gulp": "^3.9.0",
     "gulp-concat": "^2.6.0",
-    "gulp-typescript": "^2.8.2"
+    "gulp-typescript": "^2.8.2",
+    "gulp-zip": "^3.0.2",
+    "streamqueue": "^1.1.1",
+    "yargs": "^3.24.0"
   },
   "repository": {
     "type": "git",

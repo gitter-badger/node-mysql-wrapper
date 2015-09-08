@@ -9,4 +9,4 @@ node-mysql-wrapper.sln
 .ntvs_analysis.dat
 .vscode/*
 /bin/*.dll
-gulpfile.js
+zip_releases
