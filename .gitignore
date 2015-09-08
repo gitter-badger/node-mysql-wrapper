@@ -1,5 +1,6 @@
 node_modules
 obj
+bin
 .git
 .settings
 node-mysql-wrapper.njsproj
@@ -8,3 +9,4 @@ node-mysql-wrapper.sln
 .ntvs_analysis.dat
 .vscode/*
 /bin/*.dll
+gulpfile.js

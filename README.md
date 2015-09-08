@@ -3,7 +3,7 @@
 [![NPM Version][npm-image]][npm-url]
 [![Node.js Version][node-version-image]][node-version-url]
 
-# --- JavaScript documentation --- 
+
 ## Table of Contents
 
 
@@ -179,21 +179,20 @@ Unlike `end()` the `destroy()` method does not take a callback argument.
 var usersTable = db.table("users"); //yes, just this :)
 console.log('available columns: '+ usersTable.columns);
 console.log('primary key column name: '+ usersTable.primaryKey);
-console.log('find, findById, findAll, save, remove, safeRemove methods can be called by this table');
+console.log('find, findById, findAll, save and remove methods can be called from this table');
 
 usersTable.find({mail:'makis@omakis.com'},function(results){
 
-}).orderBy("userId").execute();
+});
 
 ```
 ## Performing queries 
 
 ### Method queries
 
-They are 4 types of method queries, the find/findById/findAll (select), save (insert or update), remove, and safeRemove(deletes only by primary key). All values you pass there are auto-escaped to protect the database from sql injections.
+They are 4 types of method queries, the find/findById/findAll (select), save (insert or update), remove. All values you pass there are auto-escaped to protect the database from sql injections.
 
-If you don't pass a callback inside a  method  it returns a promise, EXCEPT find and findAll which you  can: call .then(results) (pseudo function) and .promise() (or .execute()) in order to get the promise,
-which you can use later.
+All methods return promises.
  
 Column keys are auto converted to object properties, this means that user_id column on database table will be available as userId, same for table names too.
 
@@ -208,12 +207,12 @@ db.table("users").findById(18,function(user){
 db.table("users").find({mail:'makis@ideopod.com'},function(users){
 	console.log("SELECT * FROM users WHERE mail = 'makis@ideopod.com'. results: ";
 	console.dir(users);
-}).limit(10).orderBy("username").execute();
+});
 ```
 
-**Simple 'find all' method** , which is the same as db.table("tablename").find({},callback);
+**Simple 'find all' method** , which is the same as db.table("tablename").find({},callback); or .find({ tableRules : { limit :42 }} if rules passed.
 ```js
-db.table("users").findAll().limit(42).then(function(users){  //.then: executes the query and call the callback.
+db.table("users").findAll({limit :42}).then(function(users){ 
 	console.log("SELECT * FROM users. results: ");
 	console.dir(users);
 });
@@ -221,27 +220,54 @@ db.table("users").findAll().limit(42).then(function(users){  //.then: executes t
 
 **An 'advanced  find' method**. Find all users where years_old = 22, find the user's info, find user's comments, the comment's likes and users who liked them.
 ```js
+var dbUsers = db.table("users");
+
+var criteria = dbUsers.criteria
+.where("yearsOld",22)
+.join("userInfos","userId")
+.join("comments","userId")
+.at("comments")
+.orderBy("commentId",true) //true if you want desceding ( ORDER BY COLUMN_KEY DESC )
+.joinAs("likes","commentLikes","commentId")
+.at("likes")
+.joinAs("likers","users","userId").build(); 
+//In order to go to parent table use : parent(),
+//to go to primary-first table use .first(),
+//.build() builds all in correct order so you don't need to call parent() in this case. 
+
+// .build() makes that : 
+/*
 var criteria= {
 	yearsOld:22,
-	userInfos : { 
-		userId : '='
+	userInfos : { //JUST grab the userinfos table and set it as property name too
+		userId : '=' //'=' means: put the parent object's property's value.
 	},
 	comments: {
 		userId: '=',
-		commentLikes: {
-			commentId: '=',
+		
+		tableRules:{
+		    orderByDesc: "commentId" //ORDER BY comment_id DESC
+		},
+		
+		likes: {
+		    commentId: '=', //foreign key is comment_id. Where it's value is from comment object's primary key's value.
+			
+			tableRules{ //NEW 
+				table: "commentLikes" //use commentLikes tables as 'likes' property
+			}
+		
 			users: {
-				userId : '='
+				userId : '=' 
 			}
 		} 
 	}
 };
-//'=' means: put the parent object's property's value.
+*/
 
-db.table("users").find(criteria,function(results){
+dbUsers.find(criteria,function(results){
 	console.log('A lot of queries executed here, you can guess them :)');
 	console.dir(results);
-}).execute(); //or .promise()...
+});
 ```
 
 **Save method**,  Returns a single object, also updates the variable you pass into.
@@ -265,7 +291,7 @@ db.table("users").save(newUser).then(function(result){ //if you want use a promi
 
 ```
 
-**Remove method**
+**Remove method #1 **
 
 ```js
 //remove/delete all rows from users table where years_old = 22
@@ -274,11 +300,11 @@ db.table("users").remove({yearsOld:22},function(resultAnswer){
 });
 ```
 
-**safeRemove method** you can do the same thing with .remove method also
+**Remove method #2 ** remove by id also
 
 ```js
 //remove/delete a single row by its primary key
-db.table("users").safeRemove(4,function(results){
+db.table("users").remove(4,function(results){
 	console.log('we were just deleted a user with userId(user_id) = 4');
 });
 ```

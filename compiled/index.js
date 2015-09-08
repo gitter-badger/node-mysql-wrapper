@@ -1,6 +1,6 @@
 var Connection_1 = require("./lib/Connection");
 var Wrapper_1 = require("./lib/Wrapper");
-var SelectQueryRules_1 = require("./lib/SelectQueryRules");
+var SelectQueryRules_1 = require("./lib/queries/SelectQueryRules");
 if (Function.prototype["name"] === undefined) {
     Object.defineProperty(Function.prototype, 'name', {
         get: function () {

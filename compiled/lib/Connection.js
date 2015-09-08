@@ -1,7 +1,8 @@
 var __extends = (this && this.__extends) || function (d, b) {
     for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() { this.constructor = d; }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    __.prototype = b.prototype;
+    d.prototype = new __();
 };
 /// <reference path="../typings/mysql/mysql.d.ts"/>
 /// <reference path="../typings/bluebird/bluebird.d.ts"/> 
@@ -181,11 +182,17 @@ var Connection = (function (_super) {
     Connection.prototype.query = function (queryStr, callback, queryArguments) {
         if (queryArguments) {
             this.connection.query(queryStr, queryArguments, function (err, results) {
+                if (results === undefined) {
+                    results = [];
+                }
                 callback(err, results);
             });
         }
         else {
             this.connection.query(queryStr, function (err, results) {
+                if (results === undefined) {
+                    results = [];
+                }
                 callback(err, results);
             });
         }
@@ -200,5 +207,4 @@ var Connection = (function (_super) {
     };
     return Connection;
 })(events_1.EventEmitter);
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Connection;

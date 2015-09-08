@@ -26,7 +26,6 @@ class Helper {
         return objectKey.replace(/([A-Z]+)/g, "_$1").replace(/^_/, "").toLowerCase();
     }
 
-
     static forEachValue<T, U>(map: Map<T>, callback: (value: T) => U): U {
         let result: U;
         for (let id in map) {
@@ -43,9 +42,13 @@ class Helper {
         return result;
     }
 
-    static isFunction(functionToCheck) {
+    static isFunction(functionToCheck:any):boolean {
         let getType = {};
         return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
+    }
+    
+    static hasRules(obj:any):boolean{
+       return obj["tableRules"] !==undefined; 
     }
 
 

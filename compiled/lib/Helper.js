@@ -36,7 +36,9 @@ var Helper = (function () {
         var getType = {};
         return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
     };
+    Helper.hasRules = function (obj) {
+        return obj["tableRules"] !== undefined;
+    };
     return Helper;
 })();
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Helper;

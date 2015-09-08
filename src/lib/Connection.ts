@@ -129,7 +129,7 @@ class Connection extends EventEmitter {
                                             _tableColumns.push(_columnName);
                                         }
                                     }
-                                   
+
                                     _table.columns = (_tableColumns);
                                     this.tables.push(_table);
                                     //console.log('pushing ' + _table.name + ' with primary: ' + _table.primaryKey + ' and columns: ');
@@ -137,7 +137,7 @@ class Connection extends EventEmitter {
                                     if (currentPosition === results[0].length - 1) {
                                         //otan teleiwsoume me ola
 
-                                       resolve();
+                                        resolve();
                                     }
 
                                 });
@@ -207,11 +207,19 @@ class Connection extends EventEmitter {
         if (queryArguments) {
 
             this.connection.query(queryStr, queryArguments, (err, results) => {
+                if (results === undefined) {
+                    results = [];
+                }
                 callback(err, results);
             });
         } else {        //means only: queryStr and the callback
           
             this.connection.query(queryStr, (err, results) => {
+                //in order to developer see the error in his/her console window->
+                if (results === undefined) {
+                    results = [];
+                }
+                //end
                 callback(err, results);
             });
         }

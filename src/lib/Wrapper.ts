@@ -1,7 +1,7 @@
 ﻿import Connection from "./Connection";
 import Helper from "./Helper";
 import Table from "./Table";
-import {SelectQueryRules} from "./SelectQueryRules";
+import {SelectQueryRules} from "./queries/SelectQueryRules";
 import * as Promise from 'bluebird';
 import * as Mysql from 'mysql';
 

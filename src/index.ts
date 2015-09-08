@@ -1,7 +1,8 @@
 ﻿import Connection from "./lib/Connection";
 import Wrapper from "./lib/Wrapper";
+import {SelectQueryRules} from "./lib/queries/SelectQueryRules";
+
 import * as Mysql from "mysql";
-import {SelectQueryRules} from "./lib/SelectQueryRules";
 
 if (Function.prototype["name"] === undefined) {
     //works only for function something() {}; no for var something = function(){}

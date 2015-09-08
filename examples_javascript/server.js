@@ -1,87 +1,131 @@
 /// <reference path="./node_modules/node-mysql-wrapper/compiled/typings/node-mysql-wrapper/node-mysql-wrapper.d.ts" />
 var express = require('express');
 var app = express();
-var httpServer = require('http').createServer(app);
-var path = require('path');
-var config = require('config');
-var dbConfig = require('./config/database.json')[process.env.NODE_ENV || 'development'];
-var wrapper = require('node-mysql-wrapper');//require('node-mysql-wrapper');
-
-var db = wrapper.wrap("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8");
-//, "users", "user_infos", ["comments", "comment_likes"]); // second parameter for the tables you want to use ( default is all tables). OR->
-//db.useOnly/.useTables("users", "user_infos", ["comments", "comment_likes"]);// default is to use all tables., must be called before _W.ready().
-db.ready(function () { //makes the connect or the link from prev connection and then call the function when it's ready. In here you can load your modules that inherites the wrapper.
-    
-
-    db.table("users").findAll(function (_results) {
-        console.dir(_results);
-    }).limit(10).execute();
-
-    db.table("users").findById(18, function (_result) {
-        console.log(_result.username + ' is the user with id (18)' + _result.userId);
-    });
-
-    db.table("users").find(
-        {
-            yearsOld: 22,
-            userInfos: { userId: '=' },
-            comments: {
-                userId: '=',
-                commentLikes: {
-                    commentId: '=',
-                    users: { userId: '=' }
-                }
-            }
-        }, function (_results) {
-            [].forEach.call(_results, function (result) {
-                console.dir(result);
-                console.log("=========COMMENTS from " + result.username + (result.userInfos !== undefined && result.userInfos.length > 0 ? " which hometown is " + result.userInfos[0].hometown : '') + " ======\n");
-                if (result.comments !== undefined) {
-                    [].forEach.call(result.comments, function (comment) {
-                        console.log(comment.content + " with " + comment.commentLikes.length + " likes!");
-
-                        if (comment.commentLikes.length > 0)
-                            console.log('first like on this comment liked by: ' + comment.commentLikes[0].users[0].username);
-                    });
-                }
-                console.log("===============\n\n");
-            });
-
-
-        }).orderBy("userId").execute();
-
-    if (db.table("users").has("mailExists") === false) {
-
-        db.table("users").extend("mailExists", function (mail, callback) {// OR MySQLModel.extend... this is a shared custom function extends for all models.
-            //to use find,save,delete,safeDelete we can do: this.model({mail:mail}); this.find(model,function(results){});
-            //this =  the caller's MySQLTable, for example this =  the new  MySQLTable("users",db.connection), where this.name = "users", look at the next function.
-            this.connection.query("SELECT COUNT(*) FROM " + this.name + " WHERE mail = " + this.connection.escape(mail), function (err, results) {
-                if (!err && results.length > 0 && results[0]["COUNT(*)"] > 0) {
-                    callback(true);
-                } else {
-                    callback(false);
-                }
-            });
-
-        });
-
-        db.table("users").extend("createSpecialUser", function (username, callback) {
-            //var model= this.model();
-            //this.save(model,callback);
-            
-            this.save({ username: username, mail: "special@email.com", yearsOld: 23 }, callback);
-        });
+var server = require('http').createServer(app);
+var wrapper2 = require("node-mysql-wrapper");
+var db = wrapper2.wrap("mysql://kataras:pass@127.0.0.1/taglub?debug=false&charset=utf8");
+var User = (function () {
+    function User() {
     }
-
-    db.table("users").mailExists("mail20_updated@omakis.com", function (trueOrFalse) {
-        console.log("User mail exists? " + trueOrFalse);
+    return User;
+})();
+db.ready(function () {
+    var usersDb = db.table("users");
+    //or var usersDb = db.table("users"); if you don't want intel auto complete from your ide/editor
+    usersDb.findById(16, function (_user) {
+        console.log("TEST1: \n");
+        console.log("FOUND USER WITH USERNAME: " + _user.username);
     });
-
-
+    /* OR   usersDb.findById(18).then(_user=> {
+         console.log("FOUND USER WITH USERNAME: " + _user.username);
+     }, (err) => { console.log("ERROR ON FETCHING FINDBY ID: " + err) });
+   */
+    usersDb.find({
+        userId: 18,
+        myComments: {
+            userId: '=',
+            tableRules: {
+                table: "comments",
+                limit: 50,
+                orderByDesc: "commentId" //give me the first 50 comments ordered by -commentId (DESC)
+            }
+        }
+    }).then(function (_users) {
+        console.log("TEST2: \n");
+        var _user = _users[0];
+        console.log(_user.username + " with ");
+        console.log(_user.myComments.length + " comments ");
+        _user.myComments.forEach(function (_comment) {
+            console.log("--------------\n" + _comment.content);
+        });
+    });
+    usersDb.remove(5620, function (answer) {
+        console.log("TEST 3: \n");
+        console.log(answer.affectedRows + ' (1) has removed from table:  ' + answer.table);
+    });
+    var auser = new User();
+    auser.username = ' just a username';
+    auser.mail = ' just an email';
+    usersDb.save(auser, function (newUser) {
+        console.log("TEST 4: \n");
+        console.log("NEW USER HAS CREATED WITH NEW USER ID: " + newUser.userId);
+    });
+ 
+   usersDb.find({
+        yearsOld: 22,
+        comments: {
+            userId: "=",
+            tableRules: {
+                limit: 2
+            }
+        }
+    }, function (_users) {
+        /* or wrapper2.SelectQueryRules.build(usersDb.rules)... or db.buildRules(usersDb.rules)... or new wrapper2.SelectQueryRules().from(userDb.rules)...  this rules will keep the order by userId (user_id) column.*/
+        console.log("---------------TEST 6----------------------------------------");
+        _users.forEach(function (_user) {
+            console.log(_user.userId + " " + _user.username + " found with " + _user.comments.length + " comments");
+        });
+    });
+    //if no rules setted to find method  it's uses the table's rules ( if exists)
+    var _criteriaFromBuilder = usersDb.criteria
+        .where("userId", 23)
+        .join("userInfos", "userId") //auto 9a borousa na to kanw na min xreiazete kan to 2o parameter kai na pernei to primary key name tou parent table.
+        .joinAs("myComments", "comments", "userId") // kai edw episis na min xreiazete de kai kala to 3o parameter , an dn uparxei as pernei to primary key name tou parent table. 
+        .at("myComments").limit(2).joinAs("likes", "commentLikes", "commentId")
+        .first().orderBy("userId", true).build();
+    console.dir(_criteriaFromBuilder);
+    /* console.dir(_criteriaFromBuilder);
+     prints this object: ( of course you can create your own in order to pass it on .find table methods )
+    {
+        userId:23,
+        
+        myComments:{
+            userId: '=',
+            
+            tableRules:{
+                table: 'comments',
+                limit:2
+            },
+            
+            likes:{
+                commentId: '=',
+                
+                tableRules:{
+                    table: 'commentLikes'
+                }
+               
+            }
+        },
+        
+        tableRules:{
+            orderByDesc: 'userId'
+        }
+        
+    }
+    
+    
+    */
+    usersDb.find(_criteriaFromBuilder).then(function (_users) {
+        console.log("\n----------------\nTEST ADVANCED 1\n-------------------\n ");
+        _users.forEach(function (_user) {
+            console.log(_user.userId + " " + _user.username);
+            if (_user.myComments !== undefined) {
+                _user.myComments.forEach(function (_comment) {
+                    console.log(_comment.commentId + " " + _comment.content);
+                    if (_comment.likes !== undefined) {
+                        console.log(' with ' + _comment.likes.length + ' likes!');
+                    }
+                });
+            }
+        });
+    });
 });
-//END OF EXAMPLES AND TESTS.
 
-var httpPort = 1193;//config.get('Server.port') || 1193;
-httpServer.listen(httpPort, function () {
+server.on('uncaughtException', function (err) {
+    console.log(err);
+});
+
+var httpPort = 1193; //config.get('Server.port') || 1193;
+server.listen(httpPort, function () {
     console.log("Server is running on " + httpPort);
 });

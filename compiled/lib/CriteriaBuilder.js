@@ -1,43 +1,79 @@
 var Helper_1 = require("./Helper");
-var Criteria = (function () {
-    function Criteria(rawCriteriaObject, tables, noDatabaseProperties, whereClause) {
-        this.rawCriteriaObject = rawCriteriaObject;
-        this.tables = tables;
-        this.noDatabaseProperties = noDatabaseProperties;
-        this.whereClause = whereClause;
-    }
-    return Criteria;
-})();
-exports.Criteria = Criteria;
 var CriteriaBuilder = (function () {
-    function CriteriaBuilder(table) {
-        this._table = table;
-    }
-    CriteriaBuilder.prototype.build = function (rawCriteriaObject) {
-        var _this = this;
-        var colsToSearch = [];
-        var tablesToSearch = [];
-        var noDbProperties = [];
-        var whereParameterStr = "";
-        Helper_1.default.forEachKey(rawCriteriaObject, function (objectKey) {
-            var colName = Helper_1.default.toRowProperty(objectKey);
-            if (_this._table.columns.indexOf(colName) !== -1 || _this._table.primaryKey === colName) {
-                colsToSearch.push(colName + " = " + _this._table.connection.escape(rawCriteriaObject[objectKey]));
-            }
-            else {
-                if (_this._table.connection.table(colName) !== undefined) {
-                    tablesToSearch.push(colName);
-                }
-                else {
-                    noDbProperties.push(objectKey);
-                }
-            }
-        });
-        if (colsToSearch.length > 0) {
-            whereParameterStr = " WHERE " + colsToSearch.join(" AND ");
+    function CriteriaBuilder(primaryTable, tablePropertyName, parentBuilder) {
+        this.primaryTable = primaryTable;
+        this.tablePropertyName = tablePropertyName;
+        this.parentBuilder = parentBuilder;
+        this.rawCriteria = {};
+        if (parentBuilder !== undefined) {
+            this.rawCriteria = parentBuilder.rawCriteria[tablePropertyName];
         }
-        return new Criteria(rawCriteriaObject, tablesToSearch, noDbProperties, whereParameterStr);
+    }
+    CriteriaBuilder.prototype.where = function (key, value) {
+        this.rawCriteria[key] = value;
+        return this;
+    };
+    CriteriaBuilder.prototype.createRulesIfNotExists = function () {
+        if (!Helper_1.default.hasRules(this.rawCriteria)) {
+            this.rawCriteria["tableRules"] = {};
+        }
+    };
+    CriteriaBuilder.prototype.orderBy = function (column, desceding) {
+        if (desceding === void 0) { desceding = false; }
+        this.createRulesIfNotExists();
+        this.rawCriteria["tableRules"]["orderBy" + (desceding ? "Desc" : "")] = column;
+        return this;
+    };
+    CriteriaBuilder.prototype.limit = function (start, end) {
+        this.createRulesIfNotExists();
+        if (end !== undefined && end > start) {
+            this.rawCriteria["tableRules"]["limitStart"] = start;
+            this.rawCriteria["tableRules"]["limitEnd"] = end;
+        }
+        else {
+            this.rawCriteria["tableRules"]["limit"] = start;
+        }
+        return this;
+    };
+    CriteriaBuilder.prototype.join = function (realTableName, foreignColumnName) {
+        var _joinedTable = {};
+        _joinedTable[foreignColumnName] = "=";
+        this.rawCriteria[realTableName] = _joinedTable;
+        return this;
+    };
+    CriteriaBuilder.prototype.joinAs = function (tableNameProperty, realTableName, foreignColumnName) {
+        //this.childTables.push(tableNameProperty,realTableName);
+        //den ginete edw mexri na kanw kai to 'as' sta criteria mesa sto selectquery, to opoio 9a kanw twra.	this.rawCriteria[]
+        //this.createRulesIfNotExists();
+        var _joinedTable = {};
+        _joinedTable[foreignColumnName] = "=";
+        _joinedTable["tableRules"] = { table: realTableName };
+        this.rawCriteria[tableNameProperty] = _joinedTable;
+        return this;
+    };
+    CriteriaBuilder.prototype.at = function (tableNameProperty) {
+        return new CriteriaBuilder(this.primaryTable, tableNameProperty, this);
+    };
+    CriteriaBuilder.prototype.parent = function () {
+        this.parentBuilder.rawCriteria[this.tablePropertyName] = this.rawCriteria;
+        return this.parentBuilder;
+    };
+    CriteriaBuilder.prototype.first = function () {
+        if (this.parentBuilder !== undefined) {
+            return this.parent().first();
+        }
+        else {
+            return this;
+        }
+    };
+    CriteriaBuilder.prototype.build = function () {
+        if (this.parentBuilder !== undefined) {
+            return this.parent().build();
+        }
+        else {
+            return this.rawCriteria;
+        }
     };
     return CriteriaBuilder;
 })();
-exports.CriteriaBuilder = CriteriaBuilder;
+exports.default = CriteriaBuilder;

@@ -1,5 +1,5 @@
 var Helper_1 = require("./Helper");
-var SelectQueryRules_1 = require("./SelectQueryRules");
+var SelectQueryRules_1 = require("./queries/SelectQueryRules");
 var Promise = require('bluebird');
 var Wrapper = (function () {
     function Wrapper(connection) {
@@ -95,5 +95,4 @@ var Wrapper = (function () {
     };
     return Wrapper;
 })();
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Wrapper;

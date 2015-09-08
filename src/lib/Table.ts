@@ -1,27 +1,33 @@
-﻿import * as Promise from 'bluebird';
-
-import Connection from "./Connection";
+﻿import Connection from "./Connection";
 import Helper from "./Helper";
-import SelectQuery from "./SelectQuery";
-import {SelectQueryRules} from "./SelectQueryRules";
-import {ICriteria, CriteriaBuilder} from "./CriteriaBuilder";
+import {ICriteriaParts, CriteriaDivider} from "./CriteriaDivider";
+import {SelectQueryRules, RawRules} from "./queries/SelectQueryRules";
+import SelectQuery from "./queries/SelectQuery";
+import SaveQuery from "./queries/SaveQuery";
+import {default as DeleteQuery, DeleteAnswer} from "./queries/DeleteQuery";
+import CriteriaBuilder from "./CriteriaBuilder";
 
-export var EQUAL_TO_PROPERTY_SYMBOL = '=';
-
+import * as Promise from 'bluebird';
 
 class Table<T> {
     private _name: string;
     private _connection: Connection;
     private _columns: string[];
     private _primaryKey: string;
-    private _criteriaBuilder: CriteriaBuilder<T>;
+    private _criteriaDivider: CriteriaDivider<T>;
     private _rules: SelectQueryRules;
+    private _selectQuery: SelectQuery<T>
+    private _saveQuery: SaveQuery<T>;
+    private _deleteQuery: DeleteQuery<T>;
 
     constructor(tableName: string, connection: Connection) {
         this._name = tableName;
         this._connection = connection;
-        this._criteriaBuilder = new CriteriaBuilder<T>(this);
+        this._criteriaDivider = new CriteriaDivider<T>(this);
         this._rules = new SelectQueryRules();
+        this._selectQuery = new SelectQuery(this);
+        this._saveQuery = new SaveQuery(this);
+        this._deleteQuery = new DeleteQuery(this);
     }
 
     set columns(cols: string[]) {
@@ -55,8 +61,12 @@ class Table<T> {
         return this._rules;
     }
 
-    get criteriaBuilder(): CriteriaBuilder<T> {
-        return this._criteriaBuilder;
+    get criteriaDivider(): CriteriaDivider<T> {
+        return this._criteriaDivider;
+    }
+
+    get criteria(): CriteriaBuilder<T> {
+        return new CriteriaBuilder<T>(this);
     }
 
     on(evtType: string, callback: (parsedResults: any[]) => void): void {
@@ -127,7 +137,6 @@ class Table<T> {
 
     }
 
-
     getPrimaryKeyValue(jsObject): number|string {
         let returnValue: string|number = 0;
         let primaryKeyObjectProperty = Helper.toObjectProperty(this.primaryKey);
@@ -147,61 +156,21 @@ class Table<T> {
         }
         return returnValue;
     }
-
-    parseQueryResult(result: any, criteria: ICriteria): Promise<any> {
-        return new Promise((resolve: (value: any) => void) => {
-            let obj = this.objectFromRow(result);
-            if (criteria.tables.length > 0) {
-                let tableFindPromiseList = [];
-                //tables to search
-                criteria.tables.forEach((tableName) => {
-                    let table = this.connection.table(tableName);
-                    let tablePropertyName = Helper.toObjectProperty(tableName);
-                    let criteriaJsObject = Helper.copyObject(criteria.rawCriteriaObject[tablePropertyName]);
-                    Helper.forEachKey(criteriaJsObject, (propertyName) => {
-                        if (criteriaJsObject[propertyName] === EQUAL_TO_PROPERTY_SYMBOL) {
-                            criteriaJsObject[propertyName] = result[Helper.toRowProperty(propertyName)];
-                        }
-                    });
-                    let tableFindPromise = table.find(criteriaJsObject).promise();
-                  
-                    tableFindPromise.then((childResults) => {
-                        obj[tablePropertyName] = [];
-
-                        childResults.forEach((childResult) => {
-                            obj[tablePropertyName].push(this.objectFromRow(childResult));
-
-                        });
-                    });
-                    tableFindPromiseList.push(tableFindPromise);
-
-                });
-
-                Promise.all(tableFindPromiseList).then(() => {
-                    resolve(obj);
-                });
-
-            } else {
-                resolve(obj);
-            }
-
-        });
-    }
-   
+    
     //(Greek-forme)edw exoume tis epiloges: i to kanw na epistrefei kana tablerule i vazw san 3o optional parameter to tablerules, den kserw 9a to dw meta.
-    find(criteriaRawJsObject: any): SelectQuery<T>; // only criteria and promise
-    find(criteriaRawJsObject: any, callback: ((_results: T[]) => any)): SelectQuery<T>; // only callback
-    find(criteriaRawJsObject: any, callback?: (_results: T[]) => any): SelectQuery<T> {
-        return new SelectQuery<T>(this, criteriaRawJsObject, callback);
+    find(criteriaRawJsObject: any): Promise<T[]>; // only criteria and promise
+    find(criteriaRawJsObject: any, callback: ((_results: T[]) => any)): Promise<T[]>; // only callback
+    find(criteriaRawJsObject?: any, callback?: (_results: T[]) => any): Promise<T[]> {
+        return this._selectQuery.execute(criteriaRawJsObject, callback);
     }
 
     findById(id: number|string): Promise<T>; // without callback
     findById(id: number|string, callback?: (result: T) => any): Promise<T> {
-       
+
         return new Promise<T>((resolve, reject) => {
             let criteria = {};
             criteria[this.primaryKey] = id;
-          
+
             this.find(criteria).then((results) => { ///TODO: isws xreiastei an tuxei error na valw to .promise().then alla nomizw to fixara vazontas to then any sto selectquery 
                 resolve(results[0]);
                 if (callback) {
@@ -213,138 +182,26 @@ class Table<T> {
     }
 
 
-    findAll(): SelectQuery<T>; // only criteria and promise
-    findAll(callback?: (_results: T[]) => any): SelectQuery<T> {
-        return this.find({}, callback);
-    }
-
-    save(criteriaRawJsObject: any): Promise<any>; //without callback
-    save(criteriaRawJsObject: any, callback?: (_result: any) => any): Promise<any> {
-        //sta arguments borw na perniounte ta values me tin seira, ton properties pou exei to model-jsObject
-        return new Promise<any>((resolve, reject) => {
-            let primaryKeyValue = this.getPrimaryKeyValue(criteriaRawJsObject);
-
-            //14-08-2015 always run getRowAsArray before save.  if (this.columns.length === 0 || this.values.length === 0) {
-            let arr = this.getRowAsArray(criteriaRawJsObject);
-            let objectColumns = arr[0]; // = columns , 1= values
-            let objectValues = arr[1];
-            //   }
-            let obj = this.objectFromRow(criteriaRawJsObject);
-            if (primaryKeyValue > 0) {
-                //update
-                let colummnsAndValuesStr = "";
-                for (let i = 0; i < objectColumns.length; i++) {
-                    colummnsAndValuesStr += "," + objectColumns[i] + "=" + this.connection.escape(objectValues[i]);
-                }
-                colummnsAndValuesStr = colummnsAndValuesStr.substring(1);
-                let _query = "UPDATE " + this.name + " SET " + colummnsAndValuesStr + " WHERE " + this.primaryKey + " =  " + primaryKeyValue;
-                this.connection.query(_query, (err, result) => {
-                    if (err) {
-                        // console.dir(err);
-                        reject(err);
-
-                    }
-                    this.connection.notice(this.name, _query, obj);
-                    resolve(obj);
-                    if (callback) {
-                        callback(obj); //an kai kanonika auto to kanei mono t
-                    }
-                });
-
-            } else {
-                //create
-                let _query = "INSERT INTO ?? (??) VALUES(?) ";
-                this.connection.query(_query, (err, result) => {
-                    if (err) { // console.dir(err);
-                        reject(err);
-                    }
-                    // jsObject[this.primaryKey] = result.insertId;
-
-                    let primaryKeyJsObjectProperty = Helper.toObjectProperty(this.primaryKey);
-
-                    obj[primaryKeyJsObjectProperty] = result.insertId;
-                    //criteriaRawJsObject[primaryKeyJsObjectProperty] = result.insertId;
-                    primaryKeyValue = result.insertId;
-
-                    this.connection.notice(this.name, _query, obj);
-                    resolve(obj);
-                    if (callback) {
-                        callback(obj);
-                    }
-
-
-                }, [this.name, objectColumns, objectValues]);
-            }
-        });
+    findAll(): Promise<T[]>; // only criteria and promise
+    findAll(tableRules: RawRules): Promise<T[]> // only rules and promise
+    findAll(tableRules?: RawRules, callback?: (_results: T[]) => any): Promise<T[]> {
+        let _obj = {};
+        if (tableRules !== undefined) {
+            _obj["tableRules"] = tableRules;
+        }
+        return this.find(_obj, callback);
     }
 
 
-
-    safeRemove(id: number | string): Promise<{
-        affectedRows: number;
-        table: string;
-    }>; //withoutcallback
-	   safeRemove(id: number|string, callback?: (_result: { affectedRows: number; table: string }) => any): Promise<{ affectedRows: number; table: string }> {
-        return new Promise<{ affectedRows: number; table: string }>((resolve, reject) => {
-
-
-            let _query = "DELETE FROM " + this.name + " WHERE " + this.primaryKey + " = " + id;
-            this.connection.query(_query, (err, result) => {
-                if (err) {
-                    // console.dir(err);
-                    reject(err);
-                }
-                let _objReturned = { affectedRows: result.affectedRows, table: this.name };
-
-                this.connection.notice(this.name, _query, [_objReturned]);
-                resolve(_objReturned);
-                if (callback) {
-                    callback(_objReturned); //an kai kanonika auto to kanei mono t
-                }
-            });
-
-        });
+    save(criteriaRawJsObject: any): Promise<T | any>; //without callback
+    save(criteriaRawJsObject: any, callback?: (_result: any) => any): Promise<T | any> {
+        return this._saveQuery.execute(criteriaRawJsObject, callback);
     }
 
-    remove(criteriaRawObject: any): Promise<{
-        affectedRows: number;
-        table: string;
-    }>; // without callback
-    remove(criteriaRawJsObject: any, callback?: (_result: { affectedRows: number; table: string }) => any): Promise<{ affectedRows: number; table: string }> {
-        return new Promise<{ affectedRows: number; table: string }>((resolve, reject) => {
-            let primaryKeyValue = this.getPrimaryKeyValue(criteriaRawJsObject);
-            if (!primaryKeyValue || primaryKeyValue <= 0) {
-                let arr = this.getRowAsArray(criteriaRawJsObject);
-                let objectValues = arr[1];
-                let colummnsAndValues = [];
-                for (let i = 0; i < colummnsAndValues.length; i++) {
-                    colummnsAndValues.push(colummnsAndValues[i] + "=" + this.connection.escape(objectValues[i]));
-                }
-                if (colummnsAndValues.length === 0) {
-                    reject('No criteria found in model! ');
-                }
-
-                let _query = "DELETE FROM " + this.name + " WHERE " + colummnsAndValues.join(' AND ');
-                this.connection.query(_query, (err, result) => {
-                    if (err) {
-                        //console.dir(err);
-                        reject(err);
-                    }
-                    let _objReturned = { affectedRows: result.affectedRows, table: this.name };
-
-                    this.connection.notice(this.name, _query, [_objReturned]);
-                    resolve(_objReturned);
-                    if (callback) {
-                        callback(_objReturned);  //an kai kanonika auto to kanei mono t
-                    }
-                });
-            } else {
-                // return this.safeRemove(jsObject);
-                this.safeRemove(criteriaRawJsObject).then((_res) => {
-                    resolve(_res);
-                });
-            }
-        });
+    remove(id: number | string); // ID without callback
+    remove(criteriaRawObject: any): Promise<DeleteAnswer>; // criteria obj without callback
+    remove(criteriaOrID: any | number | string, callback?: (_result: DeleteAnswer) => any): Promise<DeleteAnswer> {
+        return this._deleteQuery.execute(criteriaOrID, callback);
     }
 
 

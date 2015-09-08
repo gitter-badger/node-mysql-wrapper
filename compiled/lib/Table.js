@@ -1,15 +1,20 @@
-var Promise = require('bluebird');
 var Helper_1 = require("./Helper");
-var SelectQuery_1 = require("./SelectQuery");
-var SelectQueryRules_1 = require("./SelectQueryRules");
+var CriteriaDivider_1 = require("./CriteriaDivider");
+var SelectQueryRules_1 = require("./queries/SelectQueryRules");
+var SelectQuery_1 = require("./queries/SelectQuery");
+var SaveQuery_1 = require("./queries/SaveQuery");
+var DeleteQuery_1 = require("./queries/DeleteQuery");
 var CriteriaBuilder_1 = require("./CriteriaBuilder");
-exports.EQUAL_TO_PROPERTY_SYMBOL = '=';
+var Promise = require('bluebird');
 var Table = (function () {
     function Table(tableName, connection) {
         this._name = tableName;
         this._connection = connection;
-        this._criteriaBuilder = new CriteriaBuilder_1.CriteriaBuilder(this);
+        this._criteriaDivider = new CriteriaDivider_1.CriteriaDivider(this);
         this._rules = new SelectQueryRules_1.SelectQueryRules();
+        this._selectQuery = new SelectQuery_1.default(this);
+        this._saveQuery = new SaveQuery_1.default(this);
+        this._deleteQuery = new DeleteQuery_1.default(this);
     }
     Object.defineProperty(Table.prototype, "columns", {
         get: function () {
@@ -55,9 +60,16 @@ var Table = (function () {
         enumerable: true,
         configurable: true
     });
-    Object.defineProperty(Table.prototype, "criteriaBuilder", {
+    Object.defineProperty(Table.prototype, "criteriaDivider", {
         get: function () {
-            return this._criteriaBuilder;
+            return this._criteriaDivider;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Object.defineProperty(Table.prototype, "criteria", {
+        get: function () {
+            return new CriteriaBuilder_1.default(this);
         },
         enumerable: true,
         configurable: true
@@ -135,41 +147,8 @@ var Table = (function () {
         }
         return returnValue;
     };
-    Table.prototype.parseQueryResult = function (result, criteria) {
-        var _this = this;
-        return new Promise(function (resolve) {
-            var obj = _this.objectFromRow(result);
-            if (criteria.tables.length > 0) {
-                var tableFindPromiseList = [];
-                criteria.tables.forEach(function (tableName) {
-                    var table = _this.connection.table(tableName);
-                    var tablePropertyName = Helper_1.default.toObjectProperty(tableName);
-                    var criteriaJsObject = Helper_1.default.copyObject(criteria.rawCriteriaObject[tablePropertyName]);
-                    Helper_1.default.forEachKey(criteriaJsObject, function (propertyName) {
-                        if (criteriaJsObject[propertyName] === exports.EQUAL_TO_PROPERTY_SYMBOL) {
-                            criteriaJsObject[propertyName] = result[Helper_1.default.toRowProperty(propertyName)];
-                        }
-                    });
-                    var tableFindPromise = table.find(criteriaJsObject).promise();
-                    tableFindPromise.then(function (childResults) {
-                        obj[tablePropertyName] = [];
-                        childResults.forEach(function (childResult) {
-                            obj[tablePropertyName].push(_this.objectFromRow(childResult));
-                        });
-                    });
-                    tableFindPromiseList.push(tableFindPromise);
-                });
-                Promise.all(tableFindPromiseList).then(function () {
-                    resolve(obj);
-                });
-            }
-            else {
-                resolve(obj);
-            }
-        });
-    };
     Table.prototype.find = function (criteriaRawJsObject, callback) {
-        return new SelectQuery_1.default(this, criteriaRawJsObject, callback);
+        return this._selectQuery.execute(criteriaRawJsObject, callback);
     };
     Table.prototype.findById = function (id, callback) {
         var _this = this;
@@ -184,105 +163,19 @@ var Table = (function () {
             }).catch(function (err) { return reject(err); });
         });
     };
-    Table.prototype.findAll = function (callback) {
-        return this.find({}, callback);
+    Table.prototype.findAll = function (tableRules, callback) {
+        var _obj = {};
+        if (tableRules !== undefined) {
+            _obj["tableRules"] = tableRules;
+        }
+        return this.find(_obj, callback);
     };
     Table.prototype.save = function (criteriaRawJsObject, callback) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var primaryKeyValue = _this.getPrimaryKeyValue(criteriaRawJsObject);
-            var arr = _this.getRowAsArray(criteriaRawJsObject);
-            var objectColumns = arr[0];
-            var objectValues = arr[1];
-            var obj = _this.objectFromRow(criteriaRawJsObject);
-            if (primaryKeyValue > 0) {
-                var colummnsAndValuesStr = "";
-                for (var i = 0; i < objectColumns.length; i++) {
-                    colummnsAndValuesStr += "," + objectColumns[i] + "=" + _this.connection.escape(objectValues[i]);
-                }
-                colummnsAndValuesStr = colummnsAndValuesStr.substring(1);
-                var _query = "UPDATE " + _this.name + " SET " + colummnsAndValuesStr + " WHERE " + _this.primaryKey + " =  " + primaryKeyValue;
-                _this.connection.query(_query, function (err, result) {
-                    if (err) {
-                        reject(err);
-                    }
-                    _this.connection.notice(_this.name, _query, obj);
-                    resolve(obj);
-                    if (callback) {
-                        callback(obj);
-                    }
-                });
-            }
-            else {
-                var _query = "INSERT INTO ?? (??) VALUES(?) ";
-                _this.connection.query(_query, function (err, result) {
-                    if (err) {
-                        reject(err);
-                    }
-                    var primaryKeyJsObjectProperty = Helper_1.default.toObjectProperty(_this.primaryKey);
-                    obj[primaryKeyJsObjectProperty] = result.insertId;
-                    primaryKeyValue = result.insertId;
-                    _this.connection.notice(_this.name, _query, obj);
-                    resolve(obj);
-                    if (callback) {
-                        callback(obj);
-                    }
-                }, [_this.name, objectColumns, objectValues]);
-            }
-        });
+        return this._saveQuery.execute(criteriaRawJsObject, callback);
     };
-    Table.prototype.safeRemove = function (id, callback) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var _query = "DELETE FROM " + _this.name + " WHERE " + _this.primaryKey + " = " + id;
-            _this.connection.query(_query, function (err, result) {
-                if (err) {
-                    reject(err);
-                }
-                var _objReturned = { affectedRows: result.affectedRows, table: _this.name };
-                _this.connection.notice(_this.name, _query, [_objReturned]);
-                resolve(_objReturned);
-                if (callback) {
-                    callback(_objReturned);
-                }
-            });
-        });
-    };
-    Table.prototype.remove = function (criteriaRawJsObject, callback) {
-        var _this = this;
-        return new Promise(function (resolve, reject) {
-            var primaryKeyValue = _this.getPrimaryKeyValue(criteriaRawJsObject);
-            if (!primaryKeyValue || primaryKeyValue <= 0) {
-                var arr = _this.getRowAsArray(criteriaRawJsObject);
-                var objectValues = arr[1];
-                var colummnsAndValues = [];
-                for (var i = 0; i < colummnsAndValues.length; i++) {
-                    colummnsAndValues.push(colummnsAndValues[i] + "=" + _this.connection.escape(objectValues[i]));
-                }
-                if (colummnsAndValues.length === 0) {
-                    reject('No criteria found in model! ');
-                }
-                var _query = "DELETE FROM " + _this.name + " WHERE " + colummnsAndValues.join(' AND ');
-                _this.connection.query(_query, function (err, result) {
-                    if (err) {
-                        reject(err);
-                    }
-                    var _objReturned = { affectedRows: result.affectedRows, table: _this.name };
-                    _this.connection.notice(_this.name, _query, [_objReturned]);
-                    resolve(_objReturned);
-                    if (callback) {
-                        callback(_objReturned);
-                    }
-                });
-            }
-            else {
-                _this.safeRemove(criteriaRawJsObject).then(function (_res) {
-                    resolve(_res);
-                });
-            }
-        });
+    Table.prototype.remove = function (criteriaOrID, callback) {
+        return this._deleteQuery.execute(criteriaOrID, callback);
     };
     return Table;
 })();
-Object.defineProperty(exports, "__esModule", { value: true });
 exports.default = Table;
