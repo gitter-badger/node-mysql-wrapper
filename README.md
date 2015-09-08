@@ -300,7 +300,7 @@ db.table("users").remove({yearsOld:22},function(resultAnswer){
 });
 ```
 
-**Remove method .2 ** remove by id also
+**Remove method .2** remove by id also
 
 ```js
 //remove/delete a single row by its primary key
