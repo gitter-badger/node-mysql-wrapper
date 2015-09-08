@@ -291,7 +291,7 @@ db.table("users").save(newUser).then(function(result){ //if you want use a promi
 
 ```
 
-**Remove method #1 **
+**Remove method .1**
 
 ```js
 //remove/delete all rows from users table where years_old = 22
@@ -300,7 +300,7 @@ db.table("users").remove({yearsOld:22},function(resultAnswer){
 });
 ```
 
-**Remove method #2 ** remove by id also
+**Remove method .2 ** remove by id also
 
 ```js
 //remove/delete a single row by its primary key
@@ -315,8 +315,8 @@ Also you can **wait for multiple query methods to finish** before you do somethi
 
 ```js
 var findAUser = db.table("users").findById(16);
-var findMoreUsers = db.table("users").find({username: 'a username'}).promise(); //or .execute()
-var findSomeComments = db.table("comments").find({userId:16}).promise(); // or .execute()
+var findMoreUsers = db.table("users").find({username: 'a username'});
+var findSomeComments = db.table("comments").find({userId:16});
 
 //you can pass an array of promises too.
 db.when(findAUser,findMoreUsers,findSomeComments).then(function(results) {
