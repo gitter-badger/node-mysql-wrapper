@@ -23,10 +23,18 @@ var SelectQuery = (function () {
                     });
                     var tableFindPromise = table.find(criteriaJsObject);
                     tableFindPromise.then(function (childResults) {
-                        obj[tablePropertyName] = [];
-                        childResults.forEach(function (childResult) {
-                            obj[tablePropertyName].push(_this._table.objectFromRow(childResult));
-                        });
+                        if (childResults.length === 1 &&
+                            Helper_1.default.hasRules(criteriaJsObject) &&
+                            (criteriaJsObject["tableRules"].limit !== undefined && criteriaJsObject["tableRules"].limit === 1) ||
+                            (criteriaJsObject["tableRules"].limitEnd !== undefined && criteriaJsObject["tableRules"].limitEnd === 1)) {
+                            obj[tablePropertyName] = _this._table.objectFromRow(childResults[0]);
+                        }
+                        else {
+                            obj[tablePropertyName] = [];
+                            childResults.forEach(function (childResult) {
+                                obj[tablePropertyName].push(_this._table.objectFromRow(childResult));
+                            });
+                        }
                     });
                     tableFindPromiseList.push(tableFindPromise);
                 });
@@ -48,7 +56,7 @@ var SelectQuery = (function () {
                 queryRules = SelectQueryRules_1.SelectQueryRules.fromRawObject(rawCriteria["tableRules"]);
             }
             else {
-                queryRules = _this._table.rules;
+                queryRules = new SelectQueryRules_1.SelectQueryRules().from(_this._table.rules);
             }
             var criteria = _this._table.criteriaDivider.divide(rawCriteria);
             var query = "SELECT * FROM " + _this._table.name + criteria.whereClause + queryRules.toString();

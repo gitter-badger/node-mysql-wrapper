@@ -190,7 +190,7 @@ usersTable.find({mail:'makis@omakis.com'},function(results){
 
 ### Method queries
 
-They are 4 types of method queries, the find/findById/findAll (select), save (insert or update), remove. All values you pass there are auto-escaped to protect the database from sql injections.
+They are 4 types of method queries, the find/findById/findSingle,findAll (select), save (insert or update), remove. All values you pass there are auto-escaped to protect the database from sql injections.
 
 All methods return promises.
  
@@ -199,13 +199,21 @@ Column keys are auto converted to object properties, this means that user_id col
 **Simple 'find by id' method** , this find method always returns  one result.
 ```js
 db.table("users").findById(18,function(user){
+	console.log("SELECT * FROM users WHERE user_id = 18");
+	console.dir(user);
+});
+```
+**Simple 'find single' method** , this find method always returns  one result.
+```js
+db.table("users").findSingle({mail:'makis@ideopod.com'},function(user){
+	console.log("SELECT * FROM users WHERE mail = 'makis@ideopod.com' LIMIT 1");
 	console.dir(user);
 });
 ```
 **Simple 'find by' method** this find method always returns an array.
 ```js
-db.table("users").find({mail:'makis@ideopod.com'},function(users){
-	console.log("SELECT * FROM users WHERE mail = 'makis@ideopod.com'. results: ";
+db.table("users").find({yearsOld:22},function(users){
+	console.log("SELECT * FROM users WHERE yearsOld = 22. results: ";
 	console.dir(users);
 });
 ```
@@ -213,7 +221,7 @@ db.table("users").find({mail:'makis@ideopod.com'},function(users){
 **Simple 'find all' method** , which is the same as db.table("tablename").find({},callback); or .find({ tableRules : { limit :42 }} if rules passed.
 ```js
 db.table("users").findAll({limit :42}).then(function(users){ 
-	console.log("SELECT * FROM users. results: ");
+	console.log("SELECT * FROM users LIMIT 42. results: ");
 	console.dir(users);
 });
 ```
@@ -224,7 +232,11 @@ var dbUsers = db.table("users");
 
 var criteria = dbUsers.criteria
 .where("yearsOld",22)
-.join("userInfos","userId")
+.joinAs("info","userInfos","userId").at("info").limit(1) 
+//with.at('tableOrPropertyName') we are going and passing criterias inside the info property
+//this will pass the the result as object not as array, because of limit(1)
+.parent() // or .original() here will be redirect to parent object, ( user(s) table) to continue our query...
+//original() goes to the first-original-primary table, parent() goes to the parent table, you can have unlimited .at('joinedTableOrProperty') functions.
 .join("comments","userId")
 .at("comments")
 .orderBy("commentId",true) //true if you want desceding ( ORDER BY COLUMN_KEY DESC )
@@ -232,17 +244,21 @@ var criteria = dbUsers.criteria
 .at("likes")
 .joinAs("likers","users","userId").build(); 
 //In order to go to parent table use : parent(),
-//to go to primary-first table use .first(),
+//to go to primary-first-iriginal table use .original(),
 //.build() builds all in correct order so you don't need to call parent() in this case. 
 
 // .build() makes that : 
 /*
 var criteria= {
-	yearsOld:22,
-	userInfos : { //JUST grab the userinfos table and set it as property name too
-		userId : '=' //'=' means: put the parent object's property's value.
+	yearsOld:22, //where
+	info : {  //joined table
+		userId : '=' , //'=' means: put the parent object's property's value.
+		tableRules: {
+			table:'userInfos',
+			limit:1
+		}
 	},
-	comments: {
+	comments: { //another joined table with it's own joined tables also
 		userId: '=',
 		
 		tableRules:{

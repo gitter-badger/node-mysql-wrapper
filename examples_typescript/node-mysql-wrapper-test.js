@@ -20,19 +20,18 @@ db.ready(function () {
          console.log("FOUND USER WITH USERNAME: " + _user.username);
      }, (err) => { console.log("ERROR ON FETCHING FINDBY ID: " + err) });
    */
-    usersDb.find({
+    usersDb.findSingle({
         userId: 18,
         myComments: {
             userId: '=',
             tableRules: {
                 table: "comments",
                 limit: 50,
-                orderByDesc: "commentId" //give me the first 50 comments ordered by -commentId (DESC)
+                orderByDesc: "commentId" //give me the first 50 comments ordered by -commentId (DESC) from table 'comments' and put them at 'myComments' property inside the result object.
             }
         }
-    }).then(function (_users) {
-        console.log("TEST2: \n");
-        var _user = _users[0];
+    }).then(function (_user) {
+        console.log("\n-------------TEST 2 ------------\n");
         console.log(_user.username + " with ");
         console.log(_user.myComments.length + " comments ");
         _user.myComments.forEach(function (_comment) {
@@ -77,12 +76,15 @@ db.ready(function () {
     });
     //if no rules setted to find method  it's uses the table's rules ( if exists)
     var _criteriaFromBuilder = usersDb.criteria
-        .where("userId", 23)
-        .join("userInfos", "userId") //auto 9a borousa na to kanw na min xreiazete kan to 2o parameter kai na pernei to primary key name tou parent table.
+        .where("userId", 24)
+        .joinAs("info", "userInfos", "userId") //auto 9a borousa na to kanw na min xreiazete kan to 2o parameter kai na pernei to primary key name tou parent table.
+        .at("info")
+        .limit(1) //because we make it limit 1 it will return this result as object not as array.
+        .parent()
         .joinAs("myComments", "comments", "userId") // kai edw episis na min xreiazete de kai kala to 3o parameter , an dn uparxei as pernei to primary key name tou parent table. 
-        .at("myComments").limit(2).joinAs("likes", "commentLikes", "commentId")
-        .first().orderBy("userId", true).build();
-    console.dir(_criteriaFromBuilder);
+        .at("myComments").limit(2)
+        .joinAs("likes", "commentLikes", "commentId")
+        .original().orderBy("userId", true).build();
     /* console.dir(_criteriaFromBuilder);
      prints this object: ( of course you can create your own in order to pass it on .find table methods )
     {
@@ -118,6 +120,9 @@ db.ready(function () {
         console.log("\n----------------\nTEST ADVANCED 1\n-------------------\n ");
         _users.forEach(function (_user) {
             console.log(_user.userId + " " + _user.username);
+            if (_user.info !== undefined) {
+                console.log(' from ' + _user.info.hometown);
+            }
             if (_user.myComments !== undefined) {
                 _user.myComments.forEach(function (_comment) {
                     console.log(_comment.commentId + " " + _comment.content);

@@ -12,7 +12,7 @@ var tsProject = typescript.createProject("tsconfig.json"); //use of tscofnig for
 
 gulp.task("src", function () {
 
-	return gulp.src(["src/**/*.ts"]) //except lib.d.ts. Maybe for future use:  { base: './src/' }
+	return gulp.src(["src/**/*.ts","src/**/**/*.ts"]) //lib, and lib/queries. //except lib.d.ts. Maybe for future use:  { base: './src/' }
 		.pipe(typescript(tsProject))
 		.pipe(gulp.dest("./compiled/"))
 		.pipe(gulp.dest("./examples_javascript/node_modules/node-mysql-wrapper/compiled/"))

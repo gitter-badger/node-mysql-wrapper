@@ -150,6 +150,17 @@ var Table = (function () {
     Table.prototype.find = function (criteriaRawJsObject, callback) {
         return this._selectQuery.execute(criteriaRawJsObject, callback);
     };
+    Table.prototype.findSingle = function (criteriaRawJsObject, callback) {
+        var _this = this;
+        return new Promise(function (resolve, reject) {
+            _this.find(criteriaRawJsObject).then(function (results) {
+                resolve(results[0]);
+                if (callback) {
+                    callback(results[0]);
+                }
+            });
+        });
+    };
     Table.prototype.findById = function (id, callback) {
         var _this = this;
         return new Promise(function (resolve, reject) {

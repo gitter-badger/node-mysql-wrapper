@@ -83,9 +83,9 @@ class CriteriaBuilder<T>{
 		return this.parentBuilder;
 	}
 
-	first(): CriteriaBuilder<T> {
+	original(): CriteriaBuilder<T> {
 		if (this.parentBuilder !== undefined) {
-			return this.parent().first();
+			return this.parent().original();
 		} else {
 			return this;
 		}

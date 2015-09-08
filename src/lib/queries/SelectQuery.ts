@@ -34,12 +34,19 @@ class SelectQuery<T> implements IQuery<T> { // T for Table's result type.
                     let tableFindPromise = table.find(criteriaJsObject);
 
                     tableFindPromise.then((childResults) => {
-                        obj[tablePropertyName] = [];
+                        if (childResults.length === 1 &&
+                            Helper.hasRules(criteriaJsObject) &&
+                            (criteriaJsObject["tableRules"].limit !== undefined && criteriaJsObject["tableRules"].limit === 1) ||
+                            (criteriaJsObject["tableRules"].limitEnd !== undefined && criteriaJsObject["tableRules"].limitEnd === 1)) {
+                            //edw an vriskeis mono ena result ALLA kai o developer epsaxne mono gia ena result, tote min kaneis to property ws array.
+                            obj[tablePropertyName] = this._table.objectFromRow(childResults[0]);
 
-                        childResults.forEach((childResult) => {
-                            obj[tablePropertyName].push(this._table.objectFromRow(childResult));
-
-                        });
+                        } else {
+                            obj[tablePropertyName] = [];
+                            childResults.forEach((childResult) => {
+                                obj[tablePropertyName].push(this._table.objectFromRow(childResult));
+                            });
+                        }
                     });
                     tableFindPromiseList.push(tableFindPromise);
 
@@ -59,23 +66,24 @@ class SelectQuery<T> implements IQuery<T> { // T for Table's result type.
     /**
      * Executes the select and returns the Promise.
      */
-    promise(rawCriteria: any, callback?: (_results: T[]) => any): Promise<T[]> {
+    promise(rawCriteria: any, callback?: (_results: T[]) => any):  Promise<T[]> {
         return new Promise<T[]>((resolve, reject) => {
             //  if(!this._rules){
               
             //search BEFORE building the criteria, inside the criteria if tableRules property found.
-            let queryRules;
+            let queryRules: SelectQueryRules;
             if (rawCriteria["tableRules"] !== undefined) {
 
                 queryRules = SelectQueryRules.fromRawObject(rawCriteria["tableRules"]);
                 //edw den vazw .from gia na kanei full override ola ta tables rules.
             } else {
-                queryRules = this._table.rules;
+                queryRules = new SelectQueryRules().from(this._table.rules);
             }
+            
+           
             //  }
             
             var criteria = this._table.criteriaDivider.divide(rawCriteria);
-
 
             let query = "SELECT * FROM " + this._table.name + criteria.whereClause + queryRules.toString();
 
@@ -109,8 +117,8 @@ class SelectQuery<T> implements IQuery<T> { // T for Table's result type.
      * Exactly the same thing as promise().
      * Executes the select and returns the Promise.
     */
-    execute(rawCriteria: any, callback?: (_results: T[]) => any): Promise<T[]> {
-        return this.promise(rawCriteria);
+    execute(rawCriteria: any, callback?: (_results: T[]) => any): Promise<T[]> { 
+          return this.promise(rawCriteria);
     }
 
 

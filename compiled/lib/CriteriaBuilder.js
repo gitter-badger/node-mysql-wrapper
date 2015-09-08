@@ -58,9 +58,9 @@ var CriteriaBuilder = (function () {
         this.parentBuilder.rawCriteria[this.tablePropertyName] = this.rawCriteria;
         return this.parentBuilder;
     };
-    CriteriaBuilder.prototype.first = function () {
+    CriteriaBuilder.prototype.original = function () {
         if (this.parentBuilder !== undefined) {
-            return this.parent().first();
+            return this.parent().original();
         }
         else {
             return this;

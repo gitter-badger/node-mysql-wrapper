@@ -234,7 +234,7 @@ declare module "node-mysql-wrapper" {
 
         parent(): CriteriaBuilder<T>;
 
-        first(): CriteriaBuilder<T>;
+        original(): CriteriaBuilder<T>;
         
         /**
          * Auto kanei kuklous mexri na paei sto primary table kai ekei na epistrepsei to sunoliko raw criteria gia execute i kati allo.
@@ -540,6 +540,8 @@ declare module "node-mysql-wrapper" {
         find(criteriaRawJsObject: any, callback: ((_results: T[]) => any)): Promise<T[]>; // criteria and callback
         find(criteriaRawJsObject: any, callback?: (_results: T[]) => any): Promise<T[]>;
 
+        findSingle(criteriaRawJsObject: any, callback?: (_result: T) => any): Promise<T>;
+        
         findById(id: number|string): Promise<T>; // without callback
         findById(id: number | string, callback?: (result: T) => any): Promise<T>;
         

@@ -164,6 +164,18 @@ class Table<T> {
         return this._selectQuery.execute(criteriaRawJsObject, callback);
     }
 
+    findSingle(criteriaRawJsObject: any, callback?: (_result: T) => any): Promise<T> {
+        return new Promise<T>((resolve, reject) => {
+            this.find(criteriaRawJsObject).then(results=> {
+                resolve(results[0]);
+                if (callback) {
+                    callback(results[0]);
+                }
+            });
+
+        });
+    }
+
     findById(id: number|string): Promise<T>; // without callback
     findById(id: number|string, callback?: (result: T) => any): Promise<T> {
 
