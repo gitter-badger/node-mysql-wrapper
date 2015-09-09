@@ -126,6 +126,11 @@ class CriteriaBuilder<T>{
 		//return this.rawCriteria;
 	}
 
+	static from<T>(table: Table<T>): CriteriaBuilder<T> {
+		return new CriteriaBuilder(table);
+	}
+
+	
 }
 
 export default CriteriaBuilder;

@@ -1,6 +1,7 @@
 ﻿import Connection from "./lib/Connection";
 import Wrapper from "./lib/Wrapper";
 import {SelectQueryRules} from "./lib/queries/SelectQueryRules";
+import CriteriaBuilder from "./lib/CriteriaBuilder";
 
 import * as Mysql from "mysql";
 
@@ -27,3 +28,4 @@ export function wrap(mysqlUrlOrObjectOrMysqlAlreadyConnection: Mysql.IConnection
 }
 
 exports.SelectQueryRules =  SelectQueryRules;
+exports.CriteriaBuilder = CriteriaBuilder;

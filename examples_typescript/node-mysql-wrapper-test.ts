@@ -90,7 +90,6 @@ db.ready(() => {
 
 
 
-    //redefine but keep unchanged rules in find method:
     usersDb.find(
         {
             yearsOld: 22,
@@ -102,8 +101,7 @@ db.ready(() => {
             }
 
         }, (_users) => {
-            /* or wrapper2.SelectQueryRules.build(usersDb.rules)... or db.buildRules(usersDb.rules)... or new wrapper2.SelectQueryRules().from(userDb.rules)...  this rules will keep the order by userId (user_id) column.*/
-
+         
             console.log("---------------TEST 6----------------------------------------");
             _users.forEach(_user=> {
                 console.log(_user.userId + " " + _user.username + " found with " + _user.comments.length + " comments");
@@ -118,11 +116,11 @@ db.ready(() => {
     let _criteriaFromBuilder = usersDb.criteria
         .except("password") // or .exclude(...columns). the only column you cannot except/exclude is the primary key (because it is used at where clause), be careful.
         .where("userId", 24)
-        .joinAs("info", "userInfos", "userId") //auto 9a borousa na to kanw na min xreiazete kan to 2o parameter kai na pernei to primary key name tou parent table.
+        .joinAs("info", "userInfos", "userId") 
         .at("info")
         .limit(1) //because we make it limit 1 it will return this result as object not as array.
         .parent()
-        .joinAs("myComments", "comments", "userId") // kai edw episis na min xreiazete de kai kala to 3o parameter , an dn uparxei as pernei to primary key name tou parent table. 
+        .joinAs("myComments", "comments", "userId")  
         .at("myComments").limit(2)
         .joinAs("likes", "commentLikes", "commentId")
         .original().orderBy("userId", true).build();
@@ -138,6 +136,7 @@ db.ready(() => {
             tableRules:{
                 table: 'comments',
                 limit:2
+               
             },
             
             likes:{
@@ -151,7 +150,8 @@ db.ready(() => {
         },
         
         tableRules:{ 
-            orderByDesc: 'userId'
+            orderByDesc: 'userId',
+            except: ['password']
         }
         
     }

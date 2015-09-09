@@ -1,4 +1,6 @@
-/// <reference path="./node_modules/node-mysql-wrapper/compiled/typings/node-mysql-wrapper/node-mysql-wrapper.d.ts" />
+/// <reference path="./node-mysql-wrapper.d.ts" />
+/// <reference path="../node/node.d.ts" />
+/// <reference path="../bluebird/bluebird.d.ts" />
 
 var express = require('express');
 var app = express();
@@ -10,6 +12,7 @@ class User { //or interface
     userId: number;
     username: string;
     mail: string;
+    password:string;
     comments: Comment[];
     myComments: Comment[];
     info: UserInfo;
@@ -63,7 +66,7 @@ db.ready(() => {
                 }
             }
         }).then(_user=> { // to get this promise use : .promise() 
-            console.log("\n-------------TEST 2 ------------\n");
+        console.log("\n-------------TEST 2 ------------\n");
             console.log(_user.username + " with ");
             console.log(_user.myComments.length + " comments ");
             _user.myComments.forEach(_comment=> {
@@ -89,17 +92,6 @@ db.ready(() => {
 
 
 
-    /* SELECT QUERY (FIND METHODS) RULES
-    : */
-    //as default rules are empty but they are exists so you can just simply:
-    //usersDb.rules.orderBy("userId", true);//this applied to all select queries referenced/executed by users table. whereClause  + ' ORDER BY user_id DESC'
-    //and clear all: usersDb.rules.clear();
-    //define new table rules:
-    // or usersDb.rules = new wrapper2.SelectQueryRules().limit(10).orderBy("userId",true);//or wrapper2.SelectQueryRules.build().... db.newTableRules(usersDb.name)... //or  db.newTableRules(usersDb.name)...
-    //redefine but keep unchanged rules in table: 
-    // usersDb.rules = new wrapper2.SelectQueryRules().from(usersDb.rules).limit(20);  // or wrapper2.SelectQueryRules.build(usersDb.rules).limit(20); now rules will have limit 10 but the order by userId it remains as it is.
-  
-    //redefine but keep unchanged rules in find method:
     usersDb.find(
         {
             yearsOld: 22,
@@ -111,8 +103,7 @@ db.ready(() => {
             }
 
         }, (_users) => {
-            /* or wrapper2.SelectQueryRules.build(usersDb.rules)... or db.buildRules(usersDb.rules)... or new wrapper2.SelectQueryRules().from(userDb.rules)...  this rules will keep the order by userId (user_id) column.*/
-
+         
             console.log("---------------TEST 6----------------------------------------");
             _users.forEach(_user=> {
                 console.log(_user.userId + " " + _user.username + " found with " + _user.comments.length + " comments");
@@ -125,12 +116,13 @@ db.ready(() => {
     
     
     let _criteriaFromBuilder = usersDb.criteria
+        .except("password") // or .exclude(...columns). the only column you cannot except/exclude is the primary key (because it is used at where clause), be careful.
         .where("userId", 24)
-        .joinAs("info", "userInfos", "userId") //auto 9a borousa na to kanw na min xreiazete kan to 2o parameter kai na pernei to primary key name tou parent table.
+        .joinAs("info", "userInfos", "userId") 
         .at("info")
         .limit(1) //because we make it limit 1 it will return this result as object not as array.
         .parent()
-        .joinAs("myComments", "comments", "userId") // kai edw episis na min xreiazete de kai kala to 3o parameter , an dn uparxei as pernei to primary key name tou parent table. 
+        .joinAs("myComments", "comments", "userId")  
         .at("myComments").limit(2)
         .joinAs("likes", "commentLikes", "commentId")
         .original().orderBy("userId", true).build();
@@ -146,6 +138,7 @@ db.ready(() => {
             tableRules:{
                 table: 'comments',
                 limit:2
+               
             },
             
             likes:{
@@ -158,19 +151,21 @@ db.ready(() => {
             }
         },
         
-        tableRules:{
-            orderByDesc: 'userId'
+        tableRules:{ 
+            orderByDesc: 'userId',
+            except: ['password']
         }
         
     }
     
     
     */
+    
+
 
     usersDb.find(_criteriaFromBuilder).then(_users=> {
         console.log("\n----------------\nTEST ADVANCED 1\n-------------------\n ");
         _users.forEach(_user=> {
-
             console.log(_user.userId + " " + _user.username);
 
             if (_user.info !== undefined) {
@@ -194,7 +189,7 @@ db.ready(() => {
 
 });
 
-server.on('uncaughtException', function(err) {
+server.on('uncaughtException', function(err:any) {
     console.log(err);
 })
 
