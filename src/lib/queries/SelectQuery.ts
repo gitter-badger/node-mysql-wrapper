@@ -14,8 +14,6 @@ class SelectQuery<T> implements IQuery<T> { // T for Table's result type.
 
     }
 
-
-
     private parseQueryResult(result: any, criteria: ICriteriaParts): Promise<any> {
         return new Promise((resolve: (value: any) => void) => {
             let obj = this._table.objectFromRow(result);
@@ -68,48 +66,9 @@ class SelectQuery<T> implements IQuery<T> { // T for Table's result type.
      */
     promise(rawCriteria: any, callback?: (_results: T[]) => any): Promise<T[]> {
         return new Promise<T[]>((resolve, reject) => {
-            //  if(!this._rules){
-              
-            //search BEFORE building the criteria, inside the criteria if tableRules property found.
-            let queryRules: SelectQueryRules;
-            if (Helper.hasRules(rawCriteria)) {
-                queryRules = SelectQueryRules.fromRawObject(rawCriteria[TABLE_RULES_PROPERTY]);
-                //edw den vazw .from gia na kanei full override ola ta tables rules.
-            } else {
-                queryRules = new SelectQueryRules().from(this._table.rules);
-            }
-            
-           
-            //  }
             
             var criteria = this._table.criteriaDivider.divide(rawCriteria);
-            let columnsToSelectString = "*";
-
-            if (queryRules.exceptColumns.length > 0) {
-                
-                let columnsToSelect: string[] = this._table.columns;
-
-                queryRules.exceptColumns.forEach(col=> {
-                    let exceptColumn = Helper.toRowProperty(col);
-                    let _colIndex: number;
-                    if ( (_colIndex = columnsToSelect.indexOf(exceptColumn)) !== -1) {
-                        columnsToSelect.splice(_colIndex, 1);
-
-                    }
-                });
-                if (columnsToSelect.length === 1) {
-                    columnsToSelectString =  columnsToSelect[0];
-                    
-                } else {
-                    columnsToSelectString = columnsToSelect.join(", ");           
-                }
-                
-                columnsToSelectString=this._table.primaryKey+", "+columnsToSelectString; //always select primary key, primary key is not at table.columns .
-                
-              
-            }
-            
-            let query = "SELECT " +columnsToSelectString + " FROM " + this._table.name + criteria.whereClause + queryRules.toString();
+            let query = "SELECT " + criteria.selectFromClause(this._table) + " FROM " + this._table.name + criteria.whereClause + criteria.queryRules.toString();
 
             this._table.connection.query(query, (error, results: any[]) => {
                 if (error || !results) {
@@ -123,7 +82,6 @@ class SelectQuery<T> implements IQuery<T> { // T for Table's result type.
                 });
 
                 Promise.all(parseQueryResultsPromises).then((_objects: T[]) => {
-
 
                     if (callback !== undefined) {
                         callback(_objects);

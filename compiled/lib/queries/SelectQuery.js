@@ -50,34 +50,8 @@ var SelectQuery = (function () {
     SelectQuery.prototype.promise = function (rawCriteria, callback) {
         var _this = this;
         return new Promise(function (resolve, reject) {
-            //  if(!this._rules){
-            var queryRules;
-            if (Helper_1.default.hasRules(rawCriteria)) {
-                queryRules = SelectQueryRules_1.SelectQueryRules.fromRawObject(rawCriteria[SelectQueryRules_1.TABLE_RULES_PROPERTY]);
-            }
-            else {
-                queryRules = new SelectQueryRules_1.SelectQueryRules().from(_this._table.rules);
-            }
             var criteria = _this._table.criteriaDivider.divide(rawCriteria);
-            var columnsToSelectString = "*";
-            if (queryRules.exceptColumns.length > 0) {
-                var columnsToSelect = _this._table.columns;
-                queryRules.exceptColumns.forEach(function (col) {
-                    var exceptColumn = Helper_1.default.toRowProperty(col);
-                    var _colIndex;
-                    if ((_colIndex = columnsToSelect.indexOf(exceptColumn)) !== -1) {
-                        columnsToSelect.splice(_colIndex, 1);
-                    }
-                });
-                if (columnsToSelect.length === 1) {
-                    columnsToSelectString = columnsToSelect[0];
-                }
-                else {
-                    columnsToSelectString = columnsToSelect.join(", ");
-                }
-                columnsToSelectString = _this._table.primaryKey + ", " + columnsToSelectString;
-            }
-            var query = "SELECT " + columnsToSelectString + " FROM " + _this._table.name + criteria.whereClause + queryRules.toString();
+            var query = "SELECT " + criteria.selectFromClause(_this._table) + " FROM " + _this._table.name + criteria.whereClause + criteria.queryRules.toString();
             _this._table.connection.query(query, function (error, results) {
                 if (error || !results) {
                     reject(error + ' Error. On find');

@@ -134,6 +134,8 @@ declare module "node-mysql-wrapper" {
         noDatabaseProperties: string[];
         whereClause: string;
 
+        selectFromClause<T>(_table: Table<T>): string;
+
     }
 
 
@@ -161,6 +163,8 @@ declare module "node-mysql-wrapper" {
         whereClause: string;
 
         constructor(rawCriteriaObject: any, tables: TableToSearchPart[], noDatabaseProperties: string[], whereClause: string);
+
+        selectFromClause<T>(_table: Table<T>): string;
     }
 
     class CriteriaDivider<T> {
@@ -195,7 +199,7 @@ declare module "node-mysql-wrapper" {
          * Same as .except(...columns)
          */
         exclude(...columns: string[]): SelectQueryRules;
-        
+
         orderBy(columnKey: string, descending?: boolean): SelectQueryRules;
         groupBy(columnKey: string): SelectQueryRules;
         limit(limitRowsOrStart: number, limitEnd?: number): SelectQueryRules;

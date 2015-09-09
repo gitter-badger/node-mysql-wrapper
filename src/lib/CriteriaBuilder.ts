@@ -43,6 +43,7 @@ class CriteriaBuilder<T>{
 		}
 		return this;
 	}
+	
 	/**
 	 * Same as .except(...columns)
 	 */
