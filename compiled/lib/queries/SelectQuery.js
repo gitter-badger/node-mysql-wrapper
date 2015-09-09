@@ -25,8 +25,8 @@ var SelectQuery = (function () {
                     tableFindPromise.then(function (childResults) {
                         if (childResults.length === 1 &&
                             Helper_1.default.hasRules(criteriaJsObject) &&
-                            (criteriaJsObject["tableRules"].limit !== undefined && criteriaJsObject["tableRules"].limit === 1) ||
-                            (criteriaJsObject["tableRules"].limitEnd !== undefined && criteriaJsObject["tableRules"].limitEnd === 1)) {
+                            (criteriaJsObject[SelectQueryRules_1.TABLE_RULES_PROPERTY].limit !== undefined && criteriaJsObject[SelectQueryRules_1.TABLE_RULES_PROPERTY].limit === 1) ||
+                            (criteriaJsObject[SelectQueryRules_1.TABLE_RULES_PROPERTY].limitEnd !== undefined && criteriaJsObject[SelectQueryRules_1.TABLE_RULES_PROPERTY].limitEnd === 1)) {
                             obj[tablePropertyName] = _this._table.objectFromRow(childResults[0]);
                         }
                         else {
@@ -52,14 +52,32 @@ var SelectQuery = (function () {
         return new Promise(function (resolve, reject) {
             //  if(!this._rules){
             var queryRules;
-            if (rawCriteria["tableRules"] !== undefined) {
-                queryRules = SelectQueryRules_1.SelectQueryRules.fromRawObject(rawCriteria["tableRules"]);
+            if (Helper_1.default.hasRules(rawCriteria)) {
+                queryRules = SelectQueryRules_1.SelectQueryRules.fromRawObject(rawCriteria[SelectQueryRules_1.TABLE_RULES_PROPERTY]);
             }
             else {
                 queryRules = new SelectQueryRules_1.SelectQueryRules().from(_this._table.rules);
             }
             var criteria = _this._table.criteriaDivider.divide(rawCriteria);
-            var query = "SELECT * FROM " + _this._table.name + criteria.whereClause + queryRules.toString();
+            var columnsToSelectString = "*";
+            if (queryRules.exceptColumns.length > 0) {
+                var columnsToSelect = _this._table.columns;
+                queryRules.exceptColumns.forEach(function (col) {
+                    var exceptColumn = Helper_1.default.toRowProperty(col);
+                    var _colIndex;
+                    if ((_colIndex = columnsToSelect.indexOf(exceptColumn)) !== -1) {
+                        columnsToSelect.splice(_colIndex, 1);
+                    }
+                });
+                if (columnsToSelect.length === 1) {
+                    columnsToSelectString = columnsToSelect[0];
+                }
+                else {
+                    columnsToSelectString = columnsToSelect.join(", ");
+                }
+                columnsToSelectString = _this._table.primaryKey + ", " + columnsToSelectString;
+            }
+            var query = "SELECT " + columnsToSelectString + " FROM " + _this._table.name + criteria.whereClause + queryRules.toString();
             _this._table.connection.query(query, function (error, results) {
                 if (error || !results) {
                     reject(error + ' Error. On find');

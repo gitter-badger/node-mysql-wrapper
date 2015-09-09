@@ -1,3 +1,4 @@
+var SelectQueryRules_1 = require("./queries/SelectQueryRules");
 var Helper_1 = require("./Helper");
 var CriteriaBuilder = (function () {
     function CriteriaBuilder(primaryTable, tablePropertyName, parentBuilder) {
@@ -15,23 +16,42 @@ var CriteriaBuilder = (function () {
     };
     CriteriaBuilder.prototype.createRulesIfNotExists = function () {
         if (!Helper_1.default.hasRules(this.rawCriteria)) {
-            this.rawCriteria["tableRules"] = {};
+            this.rawCriteria[SelectQueryRules_1.TABLE_RULES_PROPERTY] = {};
         }
+    };
+    CriteriaBuilder.prototype.except = function () {
+        var columns = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            columns[_i - 0] = arguments[_i];
+        }
+        console.log("\nEXCEPT: ", columns);
+        if (columns !== undefined) {
+            this.createRulesIfNotExists();
+            this.rawCriteria[SelectQueryRules_1.TABLE_RULES_PROPERTY]["except"] = columns;
+        }
+        return this;
+    };
+    CriteriaBuilder.prototype.exclude = function () {
+        var columns = [];
+        for (var _i = 0; _i < arguments.length; _i++) {
+            columns[_i - 0] = arguments[_i];
+        }
+        return this.except(columns.toString());
     };
     CriteriaBuilder.prototype.orderBy = function (column, desceding) {
         if (desceding === void 0) { desceding = false; }
         this.createRulesIfNotExists();
-        this.rawCriteria["tableRules"]["orderBy" + (desceding ? "Desc" : "")] = column;
+        this.rawCriteria[SelectQueryRules_1.TABLE_RULES_PROPERTY]["orderBy" + (desceding ? "Desc" : "")] = column;
         return this;
     };
     CriteriaBuilder.prototype.limit = function (start, end) {
         this.createRulesIfNotExists();
         if (end !== undefined && end > start) {
-            this.rawCriteria["tableRules"]["limitStart"] = start;
-            this.rawCriteria["tableRules"]["limitEnd"] = end;
+            this.rawCriteria[SelectQueryRules_1.TABLE_RULES_PROPERTY]["limitStart"] = start;
+            this.rawCriteria[SelectQueryRules_1.TABLE_RULES_PROPERTY]["limitEnd"] = end;
         }
         else {
-            this.rawCriteria["tableRules"]["limit"] = start;
+            this.rawCriteria[SelectQueryRules_1.TABLE_RULES_PROPERTY]["limit"] = start;
         }
         return this;
     };
@@ -47,7 +67,7 @@ var CriteriaBuilder = (function () {
         //this.createRulesIfNotExists();
         var _joinedTable = {};
         _joinedTable[foreignColumnName] = "=";
-        _joinedTable["tableRules"] = { table: realTableName };
+        _joinedTable[SelectQueryRules_1.TABLE_RULES_PROPERTY] = { table: realTableName };
         this.rawCriteria[tableNameProperty] = _joinedTable;
         return this;
     };

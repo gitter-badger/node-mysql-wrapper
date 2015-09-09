@@ -12,6 +12,7 @@ declare module "node-mysql-wrapper" {
     import {EventEmitter} from 'events';
 
     var EQUAL_TO_PROPERTY_SYMBOL: string;
+    var TABLE_RULES_PROPERTY: string;
 
     type DeleteAnswer = {
         affectedRows: number;
@@ -179,6 +180,7 @@ declare module "node-mysql-wrapper" {
         private lastPropertyClauseName: string;
         manuallyEndClause: string;
         manuallyBeginClause: string;
+        exceptColumns: string[];
         orderByColumn: string;
         orderByDescColumn: string;
         groupByColumn: string;
@@ -187,6 +189,13 @@ declare module "node-mysql-wrapper" {
         public tableName: string; //auto den benei oute sto last, oute sto from.
         static build(): SelectQueryRules;
         private last(propertyClauseName);
+        except(...columns: string[]): SelectQueryRules;
+        
+        /**
+         * Same as .except(...columns)
+         */
+        exclude(...columns: string[]): SelectQueryRules;
+        
         orderBy(columnKey: string, descending?: boolean): SelectQueryRules;
         groupBy(columnKey: string): SelectQueryRules;
         limit(limitRowsOrStart: number, limitEnd?: number): SelectQueryRules;
@@ -217,6 +226,13 @@ declare module "node-mysql-wrapper" {
         constructor(primaryTable: Table<T>); //to arxiko apo to Table.ts 9a benei
         constructor(primaryTable: Table<T>, tableName: string, parentBuilder: CriteriaBuilder<any>);// auta 9a benoun apo to parent select query.
         constructor(primaryTable: Table<T>, tablePropertyName?: string, parentBuilder?: CriteriaBuilder<any>);
+
+        except(...columns: string[]): CriteriaBuilder<T>;
+        
+        /**
+	    * Same as .except(...columns)
+	    */
+        exclude(...columns: string[]): CriteriaBuilder<T>;
 
         where(key: string, value: any): CriteriaBuilder<T>;
 
@@ -541,10 +557,10 @@ declare module "node-mysql-wrapper" {
         find(criteriaRawJsObject: any, callback?: (_results: T[]) => any): Promise<T[]>;
 
         findSingle(criteriaRawJsObject: any, callback?: (_result: T) => any): Promise<T>;
-        
+
         findById(id: number|string): Promise<T>; // without callback
         findById(id: number | string, callback?: (result: T) => any): Promise<T>;
-        
+
         findAll(): Promise<T[]>; // only criteria and promise
         findAll(tableRules: RawRules): Promise<T[]> // only rules and promise
         findAll(tableRules?: RawRules, callback?: (_results: T[]) => any): Promise<T[]>;

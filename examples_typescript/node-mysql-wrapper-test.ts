@@ -10,6 +10,7 @@ class User { //or interface
     userId: number;
     username: string;
     mail: string;
+    password:string;
     comments: Comment[];
     myComments: Comment[];
     info: UserInfo;
@@ -115,6 +116,7 @@ db.ready(() => {
     
     
     let _criteriaFromBuilder = usersDb.criteria
+        .except("password") // or .exclude(...columns). the only column you cannot except/exclude is the primary key (because it is used at where clause), be careful.
         .where("userId", 24)
         .joinAs("info", "userInfos", "userId") //auto 9a borousa na to kanw na min xreiazete kan to 2o parameter kai na pernei to primary key name tou parent table.
         .at("info")
@@ -148,7 +150,7 @@ db.ready(() => {
             }
         },
         
-        tableRules:{
+        tableRules:{ 
             orderByDesc: 'userId'
         }
         
@@ -156,11 +158,12 @@ db.ready(() => {
     
     
     */
+    
+
 
     usersDb.find(_criteriaFromBuilder).then(_users=> {
         console.log("\n----------------\nTEST ADVANCED 1\n-------------------\n ");
         _users.forEach(_user=> {
-
             console.log(_user.userId + " " + _user.username);
 
             if (_user.info !== undefined) {

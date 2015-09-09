@@ -1,5 +1,5 @@
 import Table from "./Table";
-import {SelectQueryRules} from "./queries/SelectQueryRules";
+import {SelectQueryRules, TABLE_RULES_PROPERTY} from "./queries/SelectQueryRules";
 import SelectQuery from "./queries/SelectQuery";
 import Helper from "./Helper";
 import * as Promise from 'bluebird';
@@ -17,20 +17,42 @@ class CriteriaBuilder<T>{
 	}
 
 	where(key: string, value: any): CriteriaBuilder<T> {
-
 		this.rawCriteria[key] = value;
 		return this;
 	}
 
 	private createRulesIfNotExists() {
 		if (!Helper.hasRules(this.rawCriteria)) {
-			this.rawCriteria["tableRules"] = {};
+			this.rawCriteria[TABLE_RULES_PROPERTY] = {};
 		}
+	}
+
+	except(...columns: string[]): CriteriaBuilder<T> {
+
+		console.log("\nEXCEPT: ", columns);
+		if (columns !== undefined) {
+			this.createRulesIfNotExists();
+			/* its always array lol where is my mind if (Array.isArray(columns)) { //already array
+				this.rawCriteria[TABLE_RULES_PROPERTY]["except"] = columns;
+			} else { 
+				//it's only one but we must pass it as array.
+				this.rawCriteria[TABLE_RULES_PROPERTY]["except"] = [columns];
+			}*/
+			this.rawCriteria[TABLE_RULES_PROPERTY]["except"] = columns;
+
+		}
+		return this;
+	}
+	/**
+	 * Same as .except(...columns)
+	 */
+	exclude(...columns: string[]): CriteriaBuilder<T> {
+		return this.except(columns.toString());
 	}
 
 	orderBy(column: string, desceding: boolean = false): CriteriaBuilder<T> {
 		this.createRulesIfNotExists();
-		this.rawCriteria["tableRules"]["orderBy" + (desceding ? "Desc" : "")] = column;
+		this.rawCriteria[TABLE_RULES_PROPERTY]["orderBy" + (desceding ? "Desc" : "")] = column;
 		return this;
 	}
 
@@ -38,10 +60,10 @@ class CriteriaBuilder<T>{
 		this.createRulesIfNotExists();
 
 		if (end !== undefined && end > start) {
-			this.rawCriteria["tableRules"]["limitStart"] = start;
-			this.rawCriteria["tableRules"]["limitEnd"] = end;
+			this.rawCriteria[TABLE_RULES_PROPERTY]["limitStart"] = start;
+			this.rawCriteria[TABLE_RULES_PROPERTY]["limitEnd"] = end;
 		} else {
-			this.rawCriteria["tableRules"]["limit"] = start;
+			this.rawCriteria[TABLE_RULES_PROPERTY]["limit"] = start;
 			//or 
 			/*
 			this.rawCriteria["tableRules"]["limitStart"] = 0;
@@ -67,7 +89,7 @@ class CriteriaBuilder<T>{
 		
 		let _joinedTable = {};
 		_joinedTable[foreignColumnName] = "=";
-		_joinedTable["tableRules"] = { table: realTableName };
+		_joinedTable[TABLE_RULES_PROPERTY] = { table: realTableName };
 
 		this.rawCriteria[tableNameProperty] = _joinedTable;
 		return this;

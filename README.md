@@ -232,6 +232,7 @@ var dbUsers = db.table("users");
 
 var criteria = dbUsers.criteria
 .where("yearsOld",22)
+.exclude("password","createdDate") //or .except(...columns). Removes that column(s) from the select query. 
 .joinAs("info","userInfos","userId").at("info").limit(1) 
 //with.at('tableOrPropertyName') we are going and passing criterias inside the info property
 //this will pass the the result as object not as array, because of limit(1)

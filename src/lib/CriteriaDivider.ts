@@ -1,5 +1,6 @@
 ﻿import Table from "./Table";
 import Helper from "./Helper";
+import {TABLE_RULES_PROPERTY} from "./queries/SelectQueryRules";
 
 export type TableToSearchPart = { tableName: string, propertyName: string };
 
@@ -25,16 +26,24 @@ export class CriteriaDivider<T> {
     }
 
     divide(rawCriteriaObject: any): CriteriaParts {
-        let colsToSearch = [];
+        let colsToSearch: string[] = [];
         let tablesToSearch: TableToSearchPart[] = [];
-        let noDbProperties = [];
-        let whereParameterStr = "";
-
+        let noDbProperties: string[] = [];
+        let whereParameterStr: string = "";
         Helper.forEachKey(rawCriteriaObject, (objectKey) => {
 
             let colName = Helper.toRowProperty(objectKey);
+            let exceptColumns: string[] = [];
 
-            if (this._table.columns.indexOf(colName) !== -1 || this._table.primaryKey === colName) {
+            //auto paei edw kai oxi pio katw gt exei sxesi me auto to table, enw pio katw otan kanw forEach einai gia na dw ta joinedTables.
+           
+            if (objectKey === TABLE_RULES_PROPERTY && rawCriteriaObject[objectKey]["except"] !== undefined) {
+                //has rules 
+                exceptColumns = rawCriteriaObject[objectKey]["except"];
+                //ta except columns  gia na min ginete select * ginete mesa sto SelectQuery vasi twn tableRules kai oxi tou criteriaDivider .   
+            }
+            //auto edw MONO,apla dn afinei na boun sta .where columns pou exoun ginei except gia na min uparksoun mysql query errors.
+            if ((this._table.columns.indexOf(colName) !== -1 && exceptColumns.indexOf(colName) !== -1) || this._table.primaryKey === colName) {
                 colsToSearch.push(colName + " = " + this._table.connection.escape(rawCriteriaObject[objectKey]));
             } else {
                 if (this._table.connection.table(colName) !== undefined) {
@@ -50,7 +59,7 @@ export class CriteriaDivider<T> {
         noDbProperties.forEach(key=> {
             let prop = rawCriteriaObject[key];
             if (Helper.hasRules(prop)) {
-                let realTableName = prop["tableRules"]["table"];
+                let realTableName = prop[TABLE_RULES_PROPERTY]["table"];
                 if (realTableName !== undefined) {
                     tablesToSearch.push({ tableName: Helper.toRowProperty(realTableName), propertyName: key });
                     //maybe I need to remove this key from noDbProperties in the future

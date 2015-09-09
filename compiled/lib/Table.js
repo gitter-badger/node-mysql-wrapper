@@ -177,7 +177,7 @@ var Table = (function () {
     Table.prototype.findAll = function (tableRules, callback) {
         var _obj = {};
         if (tableRules !== undefined) {
-            _obj["tableRules"] = tableRules;
+            _obj[SelectQueryRules_1.TABLE_RULES_PROPERTY] = tableRules;
         }
         return this.find(_obj, callback);
     };

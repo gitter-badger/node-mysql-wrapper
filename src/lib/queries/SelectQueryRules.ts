@@ -1,7 +1,10 @@
 import Helper from "../Helper";
 
+export var TABLE_RULES_PROPERTY = "tableRules";
+
 export type RawRules = {
 	table: string, //AUTO UPOLOGIZETE APO TO CRITERIA BUILDER, DEN BENEI STO .TOSTRING, TO VAZW EDW GIA ENAN MONO LOGO, GIA NA BORW NA KANW TO SELECTQUERYBUILDER. 
+	except: string[], //except columns.
 	begin: string,
 	orderBy: string,
 	orderByDesc: string,
@@ -18,13 +21,13 @@ export class SelectQueryRules {
 
 	public manuallyEndClause: string = "";
 	public manuallyBeginClause: string = "";
-
 	public orderByColumn: string = "";
 	public orderByDescColumn: string = "";
 	public groupByColumn: string = "";
 	public limitStart: number = 0;
 	public limitEnd: number = 0;
 	public tableName: string = ""; //auto den benei oute sto last, oute sto from.
+	public exceptColumns: string[] = []; //oute auto benei sto from.
 
 	static build(): SelectQueryRules;
 	static build(parentRule?: SelectQueryRules): SelectQueryRules {
@@ -48,6 +51,19 @@ export class SelectQueryRules {
 		}
 
 		return this;
+	}
+
+	except(...columns: string[]): SelectQueryRules {
+		if (columns !== undefined && columns.length > 0) {
+			this.exceptColumns = columns;
+		} else {
+			this.exceptColumns = [];
+		}
+		return this;
+	}
+
+	exclude(...columns: string[]): SelectQueryRules {
+		return this.except(columns.toString());
 	}
 
 	orderBy(columnKey: string, descending?: boolean): SelectQueryRules {
@@ -166,6 +182,7 @@ export class SelectQueryRules {
 	clear(): SelectQueryRules {
 		this.last("");
 		this.tableName = "";
+		this.exceptColumns = [];
 		return this.clearBeginClause().clearOrderBy().clearGroupBy().clearLimit().clearEndClause();
 	}
 
@@ -194,7 +211,7 @@ export class SelectQueryRules {
 	}
 
 	isEmpty(): boolean {
-		if (this.tableName.length < 1 && this.manuallyBeginClause.length < 1 && this.orderByColumn.length < 1 && this.orderByDescColumn.length < 1 && this.groupByColumn.length < 1
+		if (this.exceptColumns.length < 1 && this.tableName.length < 1 && this.manuallyBeginClause.length < 1 && this.orderByColumn.length < 1 && this.orderByDescColumn.length < 1 && this.groupByColumn.length < 1
 			&& this.limitStart === 0 && this.limitEnd === 0 && this.manuallyEndClause.length < 1) {
 			return true;
 		} else {
@@ -244,6 +261,9 @@ export class SelectQueryRules {
 		if (rules.tableName.length > 1) {
 			obj.table = rules.tableName;
 		}
+		if (rules.exceptColumns.length > 1) {
+			obj.except = rules.exceptColumns;
+		}
 		if (rules.manuallyBeginClause.length > 1) {
 			obj.begin = rules.manuallyBeginClause;
 		}
@@ -272,11 +292,11 @@ export class SelectQueryRules {
 
 	static fromRawObject(obj: RawRules): SelectQueryRules {
 		let rules = new SelectQueryRules();
-		
+
 		if (obj.table !== undefined && obj.table.length > 1) {
 			rules.table(obj.table);
 		}
-		
+
 		rules.appendToBegin(obj.begin);
 
 		if (obj.orderBy !== undefined && obj.orderBy.length > 1) {
@@ -295,6 +315,9 @@ export class SelectQueryRules {
 
 				obj.limitEnd = obj.limit;
 			}
+		}
+		if (obj.except !== undefined) {
+			rules.except(obj.except.toString());
 		}
 
 		rules.limit(obj.limitStart, obj.limitEnd);

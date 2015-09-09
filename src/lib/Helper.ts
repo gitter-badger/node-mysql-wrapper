@@ -1,4 +1,6 @@
-﻿export interface Map<T> {
+﻿import {TABLE_RULES_PROPERTY} from "./queries/SelectQueryRules";
+
+export interface Map<T> {
     [index: string]: T;
 }
 
@@ -48,7 +50,7 @@ class Helper {
     }
     
     static hasRules(obj:any):boolean{
-       return obj["tableRules"] !==undefined; 
+       return obj!==undefined && obj[TABLE_RULES_PROPERTY] !==undefined; 
     }
 
 

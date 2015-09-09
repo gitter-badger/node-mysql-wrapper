@@ -1,7 +1,7 @@
 ﻿import Connection from "./Connection";
 import Helper from "./Helper";
 import {ICriteriaParts, CriteriaDivider} from "./CriteriaDivider";
-import {SelectQueryRules, RawRules} from "./queries/SelectQueryRules";
+import {SelectQueryRules, RawRules,TABLE_RULES_PROPERTY} from "./queries/SelectQueryRules";
 import SelectQuery from "./queries/SelectQuery";
 import SaveQuery from "./queries/SaveQuery";
 import {default as DeleteQuery, DeleteAnswer} from "./queries/DeleteQuery";
@@ -199,7 +199,7 @@ class Table<T> {
     findAll(tableRules?: RawRules, callback?: (_results: T[]) => any): Promise<T[]> {
         let _obj = {};
         if (tableRules !== undefined) {
-            _obj["tableRules"] = tableRules;
+            _obj[TABLE_RULES_PROPERTY] = tableRules;
         }
         return this.find(_obj, callback);
     }

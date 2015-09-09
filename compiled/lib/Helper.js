@@ -1,3 +1,4 @@
+var SelectQueryRules_1 = require("./queries/SelectQueryRules");
 var Helper = (function () {
     function Helper() {
     }
@@ -37,7 +38,7 @@ var Helper = (function () {
         return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
     };
     Helper.hasRules = function (obj) {
-        return obj["tableRules"] !== undefined;
+        return obj !== undefined && obj[SelectQueryRules_1.TABLE_RULES_PROPERTY] !== undefined;
     };
     return Helper;
 })();

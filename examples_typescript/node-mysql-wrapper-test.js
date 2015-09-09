@@ -49,15 +49,6 @@ db.ready(function () {
         console.log("TEST 4: \n");
         console.log("NEW USER HAS CREATED WITH NEW USER ID: " + newUser.userId);
     });
-    /* SELECT QUERY (FIND METHODS) RULES
-    : */
-    //as default rules are empty but they are exists so you can just simply:
-    //usersDb.rules.orderBy("userId", true);//this applied to all select queries referenced/executed by users table. whereClause  + ' ORDER BY user_id DESC'
-    //and clear all: usersDb.rules.clear();
-    //define new table rules:
-    // or usersDb.rules = new wrapper2.SelectQueryRules().limit(10).orderBy("userId",true);//or wrapper2.SelectQueryRules.build().... db.newTableRules(usersDb.name)... //or  db.newTableRules(usersDb.name)...
-    //redefine but keep unchanged rules in table: 
-    // usersDb.rules = new wrapper2.SelectQueryRules().from(usersDb.rules).limit(20);  // or wrapper2.SelectQueryRules.build(usersDb.rules).limit(20); now rules will have limit 10 but the order by userId it remains as it is.
     //redefine but keep unchanged rules in find method:
     usersDb.find({
         yearsOld: 22,
@@ -76,6 +67,7 @@ db.ready(function () {
     });
     //if no rules setted to find method  it's uses the table's rules ( if exists)
     var _criteriaFromBuilder = usersDb.criteria
+        .except("password") // or .exclude(...columns). the only column you cannot except/exclude is the primary key (because it is used at where clause), be careful.
         .where("userId", 24)
         .joinAs("info", "userInfos", "userId") //auto 9a borousa na to kanw na min xreiazete kan to 2o parameter kai na pernei to primary key name tou parent table.
         .at("info")
