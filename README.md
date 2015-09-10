@@ -31,7 +31,7 @@ Sometimes I may also ask you to install the latest version from Github to check
 if a bugfix is working. In this case, please do:
 
 ```sh
-$ npm install kataras/node-mysql-wrapper
+$ npm install nodets/node-mysql-wrapper
 ```
 
 ## Introduction
@@ -82,7 +82,7 @@ From this example, you can learn the following:
 Thanks goes to the people who have contributed code to this module, see the
 [GitHub Contributors page][].
 
-[GitHub Contributors page]: https://github.com/kataras/node-mysql-wrapper/graphs/contributors
+[GitHub Contributors page]: https://github.com/nodets/node-mysql-wrapper/graphs/contributors
 
 
 
@@ -533,5 +533,5 @@ INSERT INTO `user_infos` VALUES ('4', '23', '23 user hometown');
 [npm-url]: https://npmjs.org/package/node-mysql-wrapper
 [node-version-image]: http://img.shields.io/node/v/mysql.svg
 [node-version-url]: http://nodejs.org/download/
-[travis-image]: https://img.shields.io/travis/kataras/node-mysql-wrapper/master.svg?label=linux
+[travis-image]: https://img.shields.io/travis/nodets/node-mysql-wrapper/master.svg?label=linux
 [downloads-url]: https://npmjs.org/package/node-mysql-wrapper

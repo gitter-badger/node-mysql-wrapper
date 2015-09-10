@@ -10,3 +10,4 @@ node-mysql-wrapper.sln
 .vscode/*
 /bin/*.dll
 zip_releases
+website

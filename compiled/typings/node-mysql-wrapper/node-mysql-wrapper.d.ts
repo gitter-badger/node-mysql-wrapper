@@ -1,5 +1,5 @@
 // Type definitions for node-mysql-wrapper
-// Project: https://github.com/kataras/node-mysql-wrapper
+// Project: https://github.com/nodets/node-mysql-wrapper
 // Definitions by: Makis Maropoulos <https://github.com/kataras>
 // Definitions: https://github.com/borisyankov/DefinitelyTyped
 
@@ -260,6 +260,8 @@ declare module "node-mysql-wrapper" {
          * Auto kanei kuklous mexri na paei sto primary table kai ekei na epistrepsei to sunoliko raw criteria gia execute i kati allo.
          */
         build(): any;
+
+        static from<T>(table: Table<T>): CriteriaBuilder<T>
 
     }
 
@@ -573,7 +575,7 @@ declare module "node-mysql-wrapper" {
         save(criteriaRawJsObject: any): Promise<any>; //without callback
         save(criteriaRawJsObject: any, callback?: (_result: any) => any): Promise<any>;
 
-        remove(id: number | string); // ID without callback
+        remove(id: number | string): Promise<DeleteAnswer>; // ID without callback
         remove(criteriaRawObject: any): Promise<DeleteAnswer>; // criteria obj without callback
         remove(criteriaOrID: any | number | string, callback?: (_result: DeleteAnswer) => any): Promise<DeleteAnswer>;
 
