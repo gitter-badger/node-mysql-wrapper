@@ -1,5 +1,7 @@
 # node-mysql-wrapper
 
+[![Join the chat at https://gitter.im/nodets/node-mysql-wrapper](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/nodets/node-mysql-wrapper?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 [![NPM Version][npm-image]][npm-url]
 [![Node.js Version][node-version-image]][node-version-url]
 
